@@ -65,16 +65,26 @@ void freePhyPage(uint32_t p);
 #define le2page(le, member)                 \
     to_struct((le), PageFrame_t, member)
 
+//由页框地址计算出页框是第几页
+static inline uint32_t page2pagen(PageFrame_t *page){
+    return page - Pages;
+}
+static inline uint32_t page2pa(PageFrame_t *page){
+    return page2pagen(page) << 12;
+}
 //由物理地址计算出该地址属于哪一页
 static inline PageFrame_t* pa2page(uint32_t pa) {
     if((pa >> 12) > PMM_PageCount)
         panic("pa is invalid!");
     return &Pages[(pa >> 12)];
 }
+
 static inline printPage(PageFrame_t *p){
-    printk("------------\n");
-    printk("addr:0x%08X\n",p);
+    printk("----------------------\n");
+    printk("pageAddr:0x%08X\n",p);
     printk("flag:%d property:%d\n",p->flags,p->property);
+    printk("pageAllocAddr:0x%08X\n",page2pa(p));
+    printk("----------------------\n");
 }
 // static inline PageFrame_t* va2page(uint32_t va) {
 //     if(((va - KERNEL_OFFSET) >> 12) > PMM_PageCount)

@@ -58,13 +58,19 @@ void initPMM() {
     // }
     // printk("00:%d 01:%d 10:%d\n", a0, a1, a2);
 
-    list_ptr_t* le = &(FreeArea.ptr);
-    le = listGetNext(le);
-    PageFrame_t* page = le2page(le, ptr);
-    printk(" FirstPageProperty:%d\n", page->property);
+    list_ptr_t* le1 = &(FreeArea.ptr);
+    le1 = listGetNext(le1);
+    PageFrame_t* page1 = le2page(le1, ptr);
+    printk(" FirstPageProperty:%d\n", page1->property);
 
     PageFrame_t *p1 = alloc_pages(1);
     printPage(p1);
+    
+
+    list_ptr_t* le2 = &(FreeArea.ptr);
+    le2 = listGetNext(le2);
+    PageFrame_t* page2 = le2page(le2, ptr);
+    printk(" FirstPageProperty:%d\n", page2->property);
 
 }
 uint32_t allocPhyPage() {
