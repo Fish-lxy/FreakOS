@@ -1,0 +1,480 @@
+make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+# GNU Make 3.82
+# Built for x86_64-redhat-linux-gnu
+# Copyright (C) 2010  Free Software Foundation, Inc.
+# License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+# This is free software: you are free to change and redistribute it.
+# There is NO WARRANTY, to the extent permitted by law.
+ 
+
+# Make data base, printed on Sat Dec  4 19:46:31 2021
+
+# Variables
+
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# automatic
+?F = $(notdir $?)
+# default
+.SHELLFLAGS := -c
+# environment
+VSCODE_AGENT_FOLDER = /home/lxy/.vscode-server
+# makefile (from `Makefile', line 13)
+LD_FLAGS = -T scripts/kernel.ld -m elf_i386 -nostdlib
+# environment
+VSCODE_LOG_NATIVE = false
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# automatic
+@D = $(patsubst %/,%,$(dir $@))
+# automatic
+@F = $(notdir $@)
+# default
+MAKE_VERSION := 3.82
+# makefile
+CURDIR := /home/lxy/develop/OS_Kernel
+# makefile
+SHELL = /bin/sh
+# environment
+VSCODE_NLS_CONFIG = {"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"92f61bb58ac5751fbb82c3c2359454f5.zh-cn","_translationsConfigFile":"/home/lxy/.vscode-server/data/clp/92f61bb58ac5751fbb82c3c2359454f5.zh-cn/tcf.json","_cacheRoot":"/home/lxy/.vscode-server/data/clp/92f61bb58ac5751fbb82c3c2359454f5.zh-cn","_resolvedLanguagePackCoreLocation":"/home/lxy/.vscode-server/data/clp/92f61bb58ac5751fbb82c3c2359454f5.zh-cn/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247","_corruptedFile":"/home/lxy/.vscode-server/data/clp/92f61bb58ac5751fbb82c3c2359454f5.zh-cn/corrupted.info","_languagePackSupport":true}
+# environment
+_ = /usr/bin/make
+# makefile (from `Makefile', line 1)
+MAKEFILE_LIST :=  Makefile
+# environment
+HISTCONTROL = ignoredups
+# environment
+XDG_DATA_DIRS = /home/lxy/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share
+# environment
+VSCODE_VERBOSE_LOGGING = true
+# environment
+LESSOPEN = ||/usr/bin/lesspipe.sh %s
+# environment
+VSCODE_CWD = /home/lxy
+# environment
+SSH_CONNECTION = 192.168.80.2 59131 192.168.80.135 22
+# environment
+PATH = /home/lxy/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/home/lxy/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin:/usr/local/bin:/usr/bin:/home/lxy/bin:/usr/local/sbin:/usr/sbin
+# makefile (from `Makefile', line 9)
+LD = ld
+# environment
+LSCOLORS = Gxfxcxdxbxegedabagacad
+# environment
+XDG_RUNTIME_DIR = /run/user/1000
+# environment
+VSCODE_LOG_STACK = false
+# environment
+SELINUX_USE_CURRENT_RANGE = 
+# default
+.FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver check-symlink
+# makefile (from `Makefile', line 14)
+ASM_FLAGS = -f elf -g -F stabs
+# environment
+LS_COLORS = 
+# automatic
+%F = $(notdir $%)
+# makefile (from `Makefile', line 6)
+S_OBJECTS = $(patsubst %.s, %.o, $(S_SOURCES))
+# environment
+VSCODE_PIPE_LOGGING = true
+# environment
+PWD = /home/lxy/develop/OS_Kernel
+# environment
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-88b164f3-8a7e-433c-8b29-d560b916d932.sock
+# automatic
+*D = $(patsubst %/,%,$(dir $*))
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/server/remoteExtensionHostProcess
+# environment
+HOME = /home/lxy
+# environment
+LOGNAME = lxy
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+# automatic
++F = $(notdir $+)
+# environment
+SELINUX_LEVEL_REQUESTED = 
+# environment
+ZSH = /home/lxy/.oh-my-zsh
+# environment
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# automatic
+^D = $(patsubst %/,%,$(dir $^))
+# environment
+HOSTNAME = localhost.localdomain
+# makefile (from `Makefile', line 5)
+S_SOURCES = $(shell find . -name "*.s")
+# environment
+MAKELEVEL := 0
+# default
+MAKE = $(MAKE_COMMAND)
+# default
+MAKECMDGOALS := all
+# environment
+SHLVL = 3
+# makefile (from `Makefile', line 10)
+ASM = nasm
+# makefile (from `Makefile', line 8)
+CC = gcc
+# environment
+XDG_SESSION_ID = 672
+# environment
+USER = lxy
+# makefile
+.DEFAULT_GOAL := all
+# environment
+LESS = -R
+# automatic
+%D = $(patsubst %/,%,$(dir $%))
+# default
+MAKE_COMMAND := make
+# default
+.VARIABLES := 
+# automatic
+*F = $(notdir $*)
+# makefile
+MAKEFLAGS = Rrqp
+# environment
+MFLAGS = -Rrqp
+# environment
+SSH_CLIENT = 192.168.80.2 59131 22
+# environment
+MAIL = /var/spool/mail/lxy
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# environment
+BROWSER = /home/lxy/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/bin/helpers/browser.sh
+# default
+MAKEFILES := 
+# automatic
+<F = $(notdir $<)
+# makefile (from `Makefile', line 12)
+C_FLAGS = -c -std=gnu99 -Wall -m32 -g3 -ggdb -gstabs+ -nostdinc -fno-pic -fno-builtin -fno-stack-protector -I include
+# environment
+PAGER = less
+# environment
+LC_ALL = C
+# automatic
+^F = $(notdir $^)
+# environment
+SELINUX_ROLE_REQUESTED = 
+# makefile (from `Makefile', line 3)
+C_SOURCES = $(shell find . -name "*.c")
+# default
+SUFFIXES := 
+# environment
+HISTSIZE = 50000
+# default
+.INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
+# environment
+VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH = /home/lxy/.vscode-server/bin/ccbaa2d27e38e5afa3e5c21c1c7bef4657064247/remote/node_modules
+# default
+.RECIPEPREFIX := 
+# makefile (from `Makefile', line 4)
+C_OBJECTS = $(patsubst %.c, %.o, $(C_SOURCES))
+# environment
+LANG = C
+# environment
+VSCODE_EXTHOST_WILL_SEND_SOCKET = true
+# variable set hash-table stats:
+# Load=83/1024=8%, Rehash=0, Collisions=12/130=9%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+# . (device 64768, inode 739741): 16 files, no impossibilities.
+
+# 16 files, no impossibilities in 1 directories.
+
+# Implicit Rules
+
+# No implicit rules.
+
+# Files
+
+# Not a target:
+krnl/io.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:25:34.905362734
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+mm/vmm.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:30:10.962377243
+#  File has been updated.
+#  Successfully updated.
+
+link:
+#  Implicit rule search has not been done.
+#  Implicit/static pattern stem: `'
+#  File does not exist.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# automatic
+# @ := link
+# automatic
+# % := 
+# automatic
+# * := 
+# automatic
+# + := 
+# automatic
+# | := 
+# automatic
+# < := 
+# automatic
+# ^ := 
+# automatic
+# ? := 
+# variable set hash-table stats:
+# Load=8/32=25%, Rehash=0, Collisions=1/23=4%
+#  recipe to execute (from `Makefile', line 27):
+	@echo 链接内核文件...
+	$(LD) $(LD_FLAGS) $(S_OBJECTS) $(C_OBJECTS) -o kernel
+
+all: boot/boot.o krnl/gdt_s.o krnl/idt_s.o init/main.o init/entry.o krnl/io.o krnl/elf.o krnl/debug.o krnl/gdt.o krnl/idt.o lib/string.o lib/vsprintf.o lib/list.o driver/console.o driver/timer.o mm/pmm.o mm/vmm.o mm/page_fault.o mm/kmalloc.o link update_image
+#  Command line target.
+#  Implicit rule search has been done.
+#  File does not exist.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/15=0%
+
+.PHONY: clean update_image mount_image umount_image run debug
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+lib/list.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.531365762
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+mm/pmm.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-04 19:41:13.621104919
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+mm/kmalloc.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:30:10.992377244
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+krnl/idt.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.472365759
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+.SUFFIXES:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+ 
+#  File has not been updated.
+
+.s.o:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from `Makefile', line 23):
+	@echo 编译汇编文件 $< ...
+	$(ASM) $(ASM_FLAGS) $<
+
+# Not a target:
+Makefile:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 11:42:55.347104929
+#  File has been updated.
+#  Successfully updated.
+
+debug:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from `Makefile', line 56):
+	qemu-system-x86_64 -S -s -hda disk.img -boot c &
+	sleep 1
+	cgdb -x tools/gdbinit
+
+# Not a target:
+krnl/gdt_s.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:25:34.849362731
+#  File has been updated.
+#  Successfully updated.
+
+mount_image:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from `Makefile', line 43):
+	sudo mount disk.img /mnt/kernel
+
+update_image:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from `Makefile', line 36):
+	sudo mount disk.img /mnt/kernel
+	sudo cp kernel /mnt/kernel/kernel
+	sleep 1
+	sudo umount /mnt/kernel
+
+# Not a target:
+init/entry.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:25:34.890362733
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+driver/console.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.554365763
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+init/main.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-04 15:53:17.11138611
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+krnl/debug.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.436365757
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+mm/page_fault.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:30:10.979377243
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+krnl/gdt.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.451365758
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+.DEFAULT:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+run:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from `Makefile', line 51):
+	qemu-system-x86_64 -m 64m -hda disk.img -boot c
+
+# Not a target:
+driver/timer.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.570365764
+#  File has been updated.
+#  Successfully updated.
+
+clean:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from `Makefile', line 32):
+	$(RM) $(S_OBJECTS) $(C_OBJECTS) kernel
+
+# Not a target:
+krnl/elf.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.415365756
+#  File has been updated.
+#  Successfully updated.
+
+umount_image:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from `Makefile', line 47):
+	sudo umount /mnt/kernel
+
+# Not a target:
+boot/boot.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:25:34.84236273
+#  File has been updated.
+#  Successfully updated.
+
+.c.o:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from `Makefile', line 19):
+	@echo 编译代码文件 $< ...
+	$(CC) $(C_FLAGS) $< -o $@
+
+# Not a target:
+lib/string.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.49236576
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+lib/vsprintf.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:26:32.516365761
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+krnl/idt_s.o:
+#  Implicit rule search has been done.
+#  Last modified 2021-12-03 23:25:34.855362731
+#  File has been updated.
+#  Successfully updated.
+
+# files hash-table stats:
+# Load=33/1024=3%, Rehash=0, Collisions=8/84=10%
+# VPATH Search Paths
+
+# No `vpath' search paths.
+
+# No general (`VPATH' variable) search path.
+
+# # of strings in strcache: 0 / lookups = 85 / hits = 85
+# # of strcache buffers: 1 (* 8176 B/buffer = 8176 B)
+# strcache used: total = 0 (478) / max = 0 / min = 8176 / avg = 0
+# strcache free: total = 0 (7698) / max = 0 / min = 8176 / avg = 0
+
+# strcache hash-table stats:
+# Load=50/8192=1%, Rehash=0, Collisions=7/85=8%
+# Finished Make data base on Sat Dec  4 19:46:31 2021
+
+ 
