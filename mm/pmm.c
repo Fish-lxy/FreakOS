@@ -12,6 +12,7 @@ void get_mem_info();
 void free_area_init();
 void memmap_init(PageFrame_t* base, size_t n);
 PageFrame_t* alloc_pages(size_t n);
+void free_pages(PageFrame_t* base, size_t n);
 
 //static uint32_t PMM_stack[PMM_PAGE_MAX_COUNT + 1]; //物理内存管理栈
 //static uint32_t PMM_stackTop;
@@ -32,15 +33,15 @@ void initPMM() {
     pageinit();
     memmap_init(pa2page(FreeMemStart), (PMM_PhyMemEnd - FreeMemStart) / PMM_PGSIZE);
 
-    printk(" Free Memory: 0x%X, %dKB, %dMB\n", PMM_PhyMemSize, PMM_PhyMemSize / 1024, PMM_PhyMemSize / 1024 / 1024);
-    printk(" kernelEnd: 0x%08X\n", kern_end);
-    printk(" PhyEnd: 0x%08X\n", PMM_PhyMemEnd);
-    printk(" PagesStart: 0x%X,PMM_PageCount: %d\n", (uint32_t) Pages, PMM_PageCount);
-    printk(" PagesEnd: 0x%X\n", &(Pages[PMM_PageCount]));
-    printk(" PagesAllSize: %dB\n", sizeof(PageFrame_t) * PMM_PageCount);
-    printk(" FreeMemStart: 0x%08X\n", FreeMemStart);
-    printk(" FreeAreaSize: %d FreePageCount:%d\n", PMM_PhyMemEnd - FreeMemStart, (PMM_PhyMemEnd - FreeMemStart) / PMM_PGSIZE);
-    printk(" free_page_count:%d\n", FreeArea.free_page_count);
+    // printk(" Free Memory: 0x%X, %dKB, %dMB\n", PMM_PhyMemSize, PMM_PhyMemSize / 1024, PMM_PhyMemSize / 1024 / 1024);
+    // printk(" kernelEnd: 0x%08X\n", kern_end);
+    // printk(" PhyEnd: 0x%08X\n", PMM_PhyMemEnd);
+    // printk(" PagesStart: 0x%X,PMM_PageCount: %d\n", (uint32_t) Pages, PMM_PageCount);
+    // printk(" PagesEnd: 0x%X\n", &(Pages[PMM_PageCount]));
+    // printk(" PagesAllSize: %dB\n", sizeof(PageFrame_t) * PMM_PageCount);
+    // printk(" FreeMemStart: 0x%08X\n", FreeMemStart);
+    // printk(" FreeAreaSize: %d FreePageCount:%d\n", PMM_PhyMemEnd - FreeMemStart, (PMM_PhyMemEnd - FreeMemStart) / PMM_PGSIZE);
+    // printk(" free_page_count:%d\n", FreeArea.free_page_count);
 
     // int i = 123;
     // i = SetBitOne(i, 2);
@@ -57,21 +58,24 @@ void initPMM() {
     //         ++a2;
     // }
     // printk("00:%d 01:%d 10:%d\n", a0, a1, a2);
+    printPageList();
 
-    list_ptr_t* le1 = &(FreeArea.ptr);
-    le1 = listGetNext(le1);
-    PageFrame_t* page1 = le2page(le1, ptr);
-    printk(" FirstPageProperty:%d\n", page1->property);
-
-    PageFrame_t *p1 = alloc_pages(1);
+    printk("AllocedPage1:\n");
+    PageFrame_t* p1 = alloc_pages(1);
     printPage(p1);
+
+    printk("AllocedPage2:\n");
+    PageFrame_t* p2 = alloc_pages(4);
+    printPage(p2);
     
+    printPageList();
 
-    list_ptr_t* le2 = &(FreeArea.ptr);
-    le2 = listGetNext(le2);
-    PageFrame_t* page2 = le2page(le2, ptr);
-    printk(" FirstPageProperty:%d\n", page2->property);
-
+    printk("Free1:\n");
+    free_pages(p1, 1);
+    printPageList();
+    printk("Free2:\n");
+    free_pages(p2, 4);
+    printPageList();
 }
 uint32_t allocPhyPage() {
 
@@ -104,11 +108,10 @@ void pageinit() {
     Pages = (PageFrame_t*) ROUNDUP((void*) end, PMM_PGSIZE);
 
     PMM_PageCount = PMM_PhyMemSize / PMM_PGSIZE;
-    //所有页都设定为保留
+    //先将所有页都设定为保留
     for (uint32_t i = 0;i < PMM_PageCount;i++) {
         Pages[i].flags = 0;
         Pages[i].flags = SetBitOne(Pages[i].flags, PGP_reserved);
-        //Pages[i].flags |= PG_reserved;
     }
     //空闲内存起始于Pages数组结束后新的一页
     FreeMemStart = ROUNDUP((void*) (&(Pages[PMM_PageCount])), PMM_PGSIZE) - KERNEL_OFFSET;
@@ -126,21 +129,20 @@ void memmap_init(PageFrame_t* base, size_t n) {
     }
     base->property = n;
     base->flags = SetBitOne(base->flags, PGP_property);
-    //base->flags |= PG_property;
     FreeArea.free_page_count += n;
     listAdd(&(FreeArea.ptr), &(base->ptr));
 }
 PageFrame_t* alloc_pages(size_t n) {
-    assert(n > 0, "n is must greater than 0!");
+    assert(n > 0, "alloc:n is must greater than 0!");
     if (n > FreeArea.free_page_count)
         return NULL;
 
     PageFrame_t* page = NULL;
     PageFrame_t* p = NULL;
-    list_ptr_t* le = &(FreeArea.ptr);
+    list_ptr_t* lp = &(FreeArea.ptr);
     //寻找第一个匹配的空闲块
-    while ((le = listGetNext(le)) != &(FreeArea.ptr)) {
-        p = le2page(le, ptr);
+    while ((lp = listGetNext(lp)) != &(FreeArea.ptr)) {
+        p = lp2page(lp, ptr);
         if (p->property >= n) {
             page = p;
             break;
@@ -152,13 +154,57 @@ PageFrame_t* alloc_pages(size_t n) {
             PageFrame_t* p = page + n;
             p->property = page->property - n;
             p->flags = SetBitOne(p->flags, PGP_property);
-            //p->flags |= PG_property;
             listAdd(&(page->ptr), &(p->ptr));
         }
         listDel(&(page->ptr));
         FreeArea.free_page_count -= n;
         page->flags = SetBitZero(page->flags, PGP_property);
+        page->property = n;
     }
     return page;
+}
+void free_pages(PageFrame_t* base, size_t n) {
+    assert(n > 0, "feee:n is must greater than 0!");
+    PageFrame_t* p = base;
+    //将要释放的内存块设为未使用状态
+    for (;p != base + n;p++) {
+        if (GetBit(p->flags, PGP_reserved) != 0 || GetBit(p->flags, PGP_property) != 0)
+            panic("free page's flags error!");
+        p->flags = 0;
+        p->ref = 0;
+    }
+    base->property = n;
+    base->flags = SetBitOne(base->flags, PGP_property);
+
+    list_ptr_t* lp = listGetNext(&(FreeArea.ptr));
+    while (lp != &(FreeArea.ptr)) {
+        //p指向第一个Pages块
+        p = lp2page(lp, ptr);
+
+        lp = listGetNext(lp);
+        if (base + base->property == p) {
+            base->property += p->property;
+            p->property = SetBitZero(p->flags, PGP_property);
+            listDel(&(p->ptr));
+        }
+        else if (p + p->property == base) {
+            p->property += base->property;
+            base->property = SetBitZero(base->flags, PGP_property);
+            base = p;
+            listDel(&(p->ptr));
+        }
+    }
+    FreeArea.free_page_count += n;
+    // lp = listGetNext(&(FreeArea.ptr));
+    // while (lp != &(FreeArea.ptr)) {
+    //     p = lp2page(lp, ptr);
+    //     if (base + base->property <= p) {
+    //         assert(base + base->property != p, "base + base->property != p");
+    //         break;
+    //     }
+    //     lp = listGetNext(lp);
+    // }
+    listAdd(&(FreeArea.ptr), &(base->ptr));
 
 }
+

@@ -49,11 +49,11 @@ typedef uint32_t size_t;
 static inline uint32_t GetBit(uint32_t num, uint32_t pos) {
     return (num >> pos) & 1;
 }
-//将无符号数 num 中第 pos 位置为 1 (从第 0 位开始)
+//将无符号数 num 中第 pos 位置 1 (从第 0 位开始)
 static inline uint32_t SetBitOne(uint32_t num, uint32_t pos){
     return num | (1 << (pos));  
 }
-//将无符号数 num 中第 pos 位置为 0 (从第 0 位开始)
+//将无符号数 num 中第 pos 位置 0 (从第 0 位开始)
 static inline uint32_t SetBitZero(uint32_t num, uint32_t pos){  
     return num & ~(1 << (pos));  
 }  

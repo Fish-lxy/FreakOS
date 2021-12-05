@@ -28,14 +28,6 @@ void main() {
 
 	//printKernelMemStauts();
 
-	// uint32_t ptr1, ptr2;
-	// ptr1 = allocPhyPage();
-	// printk("PhyMem Alloc! addr:0x%08X \n", ptr1);
-	// ptr2 = allocPhyPage();
-	// printk("PhyMem Alloc! addr:0x%08X \n", ptr2);
-	// freePhyPage(ptr1);
-	// freePhyPage(ptr2);
-
 	// asm volatile ("int $0x03");
 	// interruptHandlerRegister(3,int3);
 	// asm volatile ("int $0x03");

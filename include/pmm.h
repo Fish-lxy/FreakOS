@@ -62,10 +62,10 @@ uint32_t allocPhyPage();
 void freePhyPage(uint32_t p);
 
 
-#define le2page(le, member)                 \
+#define lp2page(le, member)                 \
     to_struct((le), PageFrame_t, member)
 
-//由页框地址计算出页框是第几页
+//由PageFrame_t地址计算出页框是第几页
 static inline uint32_t page2pagen(PageFrame_t *page){
     return page - Pages;
 }
@@ -80,11 +80,9 @@ static inline PageFrame_t* pa2page(uint32_t pa) {
 }
 
 static inline printPage(PageFrame_t *p){
-    printk("----------------------\n");
-    printk("pageAddr:0x%08X\n",p);
-    printk("flag:%d property:%d\n",p->flags,p->property);
+    printk("pageAddr:0x%08X ",p);
+    printk("flag:%d property:%d  ",p->flags,p->property);
     printk("pageAllocAddr:0x%08X\n",page2pa(p));
-    printk("----------------------\n");
 }
 // static inline PageFrame_t* va2page(uint32_t va) {
 //     if(((va - KERNEL_OFFSET) >> 12) > PMM_PageCount)
@@ -92,4 +90,12 @@ static inline printPage(PageFrame_t *p){
 //     return &Pages[((va - KERNEL_OFFSET) >> 12)];
 // }
 
+static inline printPageList(){
+    printk("PageList:\n");
+    list_ptr_t* lp = &(FreeArea.ptr);
+    while ((lp = listGetNext(lp)) != &(FreeArea.ptr)) {
+        PageFrame_t* p = lp2page(lp, ptr);
+        printPage(p);
+    }
+}
 #endif
