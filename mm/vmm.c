@@ -13,10 +13,10 @@
 #define PTE2pagen(pgd_count,pte_size) (sizeof(PTE_t)*(pgd_count)*(pte_size)/4096)
 
 //正式的内核页表和页目录
-PageFrame_t* PGDpages;
-PageFrame_t* PTEpages;
 PGD_t* kernelPGD;
 PTE_t* kernelPTE;
+
+uint32_t kernel_cr3;
 
 static void setKernelPGD();
 
@@ -24,16 +24,20 @@ void initVMM() {
     //printk("Init VMM...\n");
     printk(" Setting new page table...");
     //TODO
-    PGDpages = allocPhyPages(PGD2pagen(VMM_PGD_SIZE));
-    PTEpages = allocPhyPages(PTE2pagen(VMM_PGD_COUNT, VMM_PTE_SIZE));
-    kernelPGD = page2pa(PGDpages) + KERNEL_OFFSET;
-    kernelPTE = page2pa(PTEpages) + KERNEL_OFFSET;
+
+    kernelPGD = kmalloc(sizeof(PGD_t) * VMM_PGD_SIZE);
+    kernelPTE = kmalloc(sizeof(PTE_t) * VMM_PGD_COUNT * VMM_PTE_SIZE);
 
     setKernelPGD();
 
+    // printk("\nPGD:0x%08X\n", kernelPGD);
+    // printk("PTE:0x%08X\n", kernelPTE);
+    //while (1);
+
     interruptHandlerRegister(14, &pageFault);//设置页错误中断
-    uint32_t pgdKernelPhyAddr = (uint32_t) kernelPGD - KERNEL_OFFSET;
-    switchPGD(pgdKernelPhyAddr);
+    kernel_cr3 = (uint32_t) kernelPGD - KERNEL_OFFSET;
+    switchPGD(kernel_cr3);
+
     printk("OK\n");
 }
 void setKernelPGD() {
@@ -64,7 +68,7 @@ void VMM_map(PGD_t* pgd_now, uint32_t vaddr, uint32_t paddr, uint32_t flags) {
     PTE_t* pte = (PTE_t*) (pgd_now[pgd_index] & VMM_PAGE_MASK);
 
     if (pte == 0) {
-        pte = (PTE_t*) allocPhyPage();
+        pte = (PTE_t*) kmalloc(VMM_PGSIZE);
         pgd_now[pgd_index] = (uint32_t) pte | VMM_PAGE_PERSENT | VMM_PAGE_WRITEABLE;
         bzero(pte, VMM_PGSIZE);
     }

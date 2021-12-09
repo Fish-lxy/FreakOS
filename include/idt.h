@@ -19,11 +19,16 @@ struct IDT_Ptr_t {
     uint32_t base;   //基址
 } __attribute__((packed)) IDT_Ptr_t;
 
+// 中断帧
 // 中断时需要保护的寄存器集合
 typedef
-struct ProtectRegs_t {
+struct InterruptFrame_t {
+    uint32_t gs;
+    uint32_t fs;
+    uint32_t es;
     uint32_t ds;        // 用于保存用户的数据段描述符
-    //以下寄存器值由汇编压入栈，从 edi 到 eax 由 pusha 指令压入
+
+    //以下寄存器值由pusha压入栈，从 edi 到 eax 由 pusha 指令压入
     uint32_t edi;
     uint32_t esi;
     uint32_t ebp;
@@ -34,17 +39,20 @@ struct ProtectRegs_t {
     uint32_t eax;
 
     uint32_t int_no;    // 中断号
-    uint32_t err_code;  // 错误代码(有中断错误代码的中断会由CPU压入)
+
     // 以下寄存器值由处理器自动压入
+    uint32_t err_code;  // 错误代码(有中断错误代码的中断会由CPU压入)
     uint32_t eip;       
     uint32_t cs;
     uint32_t eflags;
-    uint32_t useresp;
+    // 当发生了特权级的转换，以下寄存器值将被压入
+    uint32_t user_esp;
     uint32_t ss;
-} ProtectRegs_t;
+    //从这里开始push
+} InterruptFrame_t;
 
 // 定义中断处理函数指针
-typedef void (*InterruptHandler_t)(ProtectRegs_t*);
+typedef void (*InterruptHandler_t)(InterruptFrame_t*);
 
 // 注册中断处理函数
 void interruptHandlerRegister(uint8_t n, InterruptHandler_t h);
@@ -60,7 +68,7 @@ void initIDT();
 // ISR:中断服务程序(Interrupt Service Routine)
 
 // 调用ISR中断服务程序，汇编中调用
-void ISR_handlerCall(ProtectRegs_t* pr);
+void ISR_handlerCall(InterruptFrame_t* pr);
 
 // 声明中断处理函数 
 void isr0(); 		// 0 #DE 除 0 异常 
@@ -106,7 +114,7 @@ void isr170(); //0xAA
 // IRQ:中断请求(Interrupt Request)
 
 // 调用IRQ中断服务程序，汇编中调用
-void IRQ_handlerCall(ProtectRegs_t* pr);
+void IRQ_handlerCall(InterruptFrame_t* pr);
 
 // 定义IRQ
 #define  IRQ0     32    // 系统计时器

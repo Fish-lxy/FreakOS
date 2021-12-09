@@ -15,9 +15,6 @@ GDT_Ptr gdtPtr;
 static void GDT_SetGate(int32_t num, uint32_t base,
     uint32_t limit, uint8_t access, uint8_t gran);
 
-// 声明内核栈地址
-extern uint32_t stack;
-
 // 初始化全局描述符表
 void initGDT() {
     //consoleWriteColor("Init Global Descriptor Table...", TC_black, TC_light_blue);

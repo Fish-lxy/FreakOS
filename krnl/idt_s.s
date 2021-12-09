@@ -72,29 +72,38 @@ ISR_NOERRCODE 170 ;设定170号中断(0xAA)为系统调用
 [EXTERN ISR_handlerCall]
 ; 中断服务程序
 ISR_CommonStub:
-	pusha                   ; 压入 edi, esi, ebp, esp, ebx, edx, ecx, eax
-	mov ax, ds
-	push eax                ; 保存数据段描述符
+	pusha	; 压入 edi, esi, ebp, esp, ebx, edx, ecx, eax
+	push ds	; 保存段描述符
+	push es
+	push fs
+	push gs
 	
-	mov ax, 0x10            ; 加载内核数据段描述符表
+	mov ax, 0x10	; 加载内核数据段描述符表
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
-	mov ss, ax
+	;mov ss, ax
 	
-	push esp		; 此时的 esp 寄存器的值等价于 ProtectRegs_t 结构体的指针
-	call ISR_handlerCall        ; 在 C 语言代码里
-	add esp, 4 		; 清除压入的参数
+	push esp	; 此时的 esp 寄存器的值等价于 ProtectRegs_t 结构体的指针
+	call ISR_handlerCall	; 在 C 代码里
+	pop esp		; 清除压入的参数
+	;add esp, 4 	
 	
-	pop ebx                 ; 恢复原来的数据段描述符
-	mov ds, bx
-	mov es, bx
-	mov fs, bx
-	mov gs, bx
-	mov ss, bx
+	;pop ebx	
+	;mov ds, bx
+	;mov es, bx
+	;mov fs, bx
+	;mov gs, bx
+	;mov ss, bx
 	
-	popa                     ; 弹出 edi, esi, ebp, esp, ebx, edx, ecx, eax
+	
+	pop gs	; 恢复原来的段描述符
+	pop fs
+	pop es
+	pop ds
+	popa
+	                     ; 弹出 edi, esi, ebp, esp, ebx, edx, ecx, eax
 	add esp, 8               ; 清理栈里的 error code 和 ISR
 	iret
 .end:

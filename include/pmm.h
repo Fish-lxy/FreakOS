@@ -55,10 +55,11 @@ extern uint32_t PageCount;
 extern uint32_t FreeMemStart;
 
 void initPMM();
-uint32_t allocPhyPage();
-void freePhyPage(uint32_t p);
 PageFrame_t* allocPhyPages(size_t n);
 void freePhyPages(PageFrame_t* base, size_t n);
+
+void* kmalloc(uint32_t bytes);
+void kfree(uint32_t* p, uint32_t bytes);
 
 #define lp2page(le, member)                 \
     to_struct((le), PageFrame_t, member)

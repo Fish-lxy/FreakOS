@@ -15,7 +15,7 @@
 extern void main();//内核初始化入口
 
 MultiBoot_t* GlbMbootPtr;
-int8_t KernelStack[STACK_SIZE]; //内核栈
+uint8_t KernelStack[STACK_SIZE]; //内核栈
 
 //内核临时页表和页目录的地址
 __attribute__((section(".temp.data"))) PGD_t* PGD_temp = (PGD_t*) 0x1000;

@@ -14,18 +14,20 @@ void main();
 void main() {
 	consoleClear();
 	//printk(" Paging Enabled.\n");
-	
+
 
 	initDebug();
 	initGDT();
 	initIDT();
-	
+
 	initPMM();
 	initVMM();
 	initTimer();
 
 	printk("\nLoading LiteOS Kernel...\n");
-	
+
+	// void* p = kmalloc(1024);
+	// printk("0x%08X\n", p);
 
 	//printSegStatus();
 
@@ -36,8 +38,10 @@ void main() {
 	// asm volatile ("int $0x03");
 	asm volatile ("sti"); //允许中断
 
-	printk("OK.");
+	printk("OK.\n");
 	//panic("114514");
+
+	
 	while (1) {
 		asm volatile("hlt");
 	}

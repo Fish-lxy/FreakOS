@@ -32,15 +32,10 @@ void initPMM() {
     pagesInit();
     memmapInit(pa2page(FreeMemStart), (PhyMemEnd - FreeMemStart) / PMM_PGSIZE);
 
-    printk(" Free Memory: %dKB\n", (PhyMemEnd - FreeMemStart) / 1024);
+    printk(" Free Memory: %dKB~%dMB\n", (PhyMemEnd - FreeMemStart) / 1024, (PhyMemEnd - FreeMemStart) / 1024 / 1024);
 
 }
-uint32_t allocPhyPage() {
 
-}
-void freePhyPage(uint32_t p) {
-
-}
 
 
 void pmmanagerInit() {

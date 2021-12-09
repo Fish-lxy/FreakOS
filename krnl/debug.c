@@ -6,6 +6,8 @@
 #include "pmm.h"
 #include "vmm.h"
 
+
+
 extern int vsprintf(char* buf, const char* fmt, va_list args); //lib/vsprintf.c
 static ELF_t kernel_elf;//内核ELF结构，跟踪栈帧用
 
@@ -66,16 +68,23 @@ void printkColor(const char* format, TEXT_color_t back, TEXT_color_t fore, ...) 
 
     consoleWriteColor(buf, back, fore);
 }
-inline void panic(const char* msg) {
-    printk("\n*** System Panic: %s ***\n", msg);
+
+void _panic(const char* msg, const char* filename) {
+    printk("\n*** System Panic ***\n");
+    printk("A fatal error occurred\n");
+    printk("in %s\n", filename);
     printStackTrace();
-    printk("***\n");
+    printk("msg: %s\n", msg);
+    printk("********************\n");
 
     // 致命错误发生后循环
+    asm("cli");
     while (1) {
         asm("hlt");
     }
 }
+
+
 void printStackTrace() {
     uint32_t* ebp, * eip;
 
@@ -84,10 +93,10 @@ void printStackTrace() {
         eip = ebp + 1;
         const char* symbol = ELF_SymbolLookup(*eip, &kernel_elf);
         if (symbol != NULL) {
-            printk("   stack:0x%08X %s\n", *eip, symbol);
+            printk("stack:0x%08X %s\n", *eip, symbol);
         }
         else {
-            printk("   stack:0x%08X\n", *eip);
+            printk("stack:0x%08X\n", *eip);
         }
         ebp = (uint32_t*) *ebp;
     }

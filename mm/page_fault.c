@@ -4,7 +4,7 @@
 #include "multiboot.h"
 #include "debug.h"
 
-void pageFault(ProtectRegs_t* regs) {
+void pageFault(InterruptFrame_t* regs) {
     uint32_t cr2;
     asm volatile ("mov %%cr2, %0" : "=r" (cr2));
 

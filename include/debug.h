@@ -6,6 +6,8 @@
 #include "elf.h"
 //内核调试函数
 
+#define panic(str) _panic(str,__FILE__)
+
 #define assert(x, info)\
 	do {\
 		if (!(x)) {\
@@ -21,7 +23,7 @@ void initDebug();
 void printk(const char* format, ...);
 void printkColor(const char* format, TEXT_color_t back, TEXT_color_t fore, ...);
 void printSegStatus();
-void panic(const char* msg);
+void _panic(const char* msg, const char* filename);
 void printStackTrace();
 void printKernelMemStauts();
 

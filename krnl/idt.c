@@ -132,8 +132,8 @@ void IDT_setGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
 }
 
 // 调用 ISR 中断处理函数，由汇编调用
-void ISR_handlerCall(ProtectRegs_t* pr) {
-	//由 ProtectRegs_t 中的中断号选择中断处理函数
+void ISR_handlerCall(InterruptFrame_t* pr) {
+	//由 InterruptFrame_t 中的中断号选择中断处理函数
 	if (interruptHandlers[pr->int_no]) { 
 		interruptHandlers[pr->int_no](pr);
 	}
@@ -144,7 +144,7 @@ void ISR_handlerCall(ProtectRegs_t* pr) {
 }
 
 // 调用 IRQ 中断服务程序，由汇编调用
-void IRQ_handlerCall(ProtectRegs_t* pr){
+void IRQ_handlerCall(InterruptFrame_t* pr){
 // 发送中断结束信号给 PICs
     // 按照我们的设置，从 32 号中断起为用户自定义中断
     // 因为单片的 Intel 8259A 芯片只能处理 8 级中断
