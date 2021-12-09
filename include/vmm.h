@@ -17,7 +17,7 @@
 
 #define VMM_PAGE_MASK 0xFFFFF000
 
-//1PTG包含1024个PTE
+//1PGD包含1024个PTE
 //1PTE映射12位/4KB内存地址
 
 //获得一个虚拟地址的页目录项
@@ -30,19 +30,19 @@
 typedef uint32_t PGD_t; //页目录类型
 typedef uint32_t PTE_t; //页表类型
 
-#define VMM_PGD_SIZE (VMM_PGSIZE/sizeof(PTE_t))
+#define VMM_PGD_SIZE (VMM_PGSIZE/sizeof(PTE_t)) //1024
 #define VMM_PTE_SIZE (VMM_PGSIZE/sizeof(uint32_t)) //1024
-#define VMM_PGD_COUNT PMM_MEM_MAX_SIZE/1024/4096 //256
+#define VMM_PGD_COUNT (PMM_MEM_MAX_SIZE/1024/4096) //256
 
 //extern PGD_t kernelPGD[VMM_PGD_SIZE];//内核页目录区域
 
 void initVMM();
 void switchPGD(uint32_t pd); //切换页表
 void invaildate(uint32_t addr);//刷新页表缓存，使包含addr的页对应的TLB项失效
-void VMM_map(PGD_t *pgd_now,uint32_t vaddr,uint32_t paddr,uint32_t flags); //将物理地址映射到虚拟地址
-void VMM_unmap(PGD_t *pgd_now,uint32_t vaddr);//取消映射
-uint32_t VMM_getMapping(PGD_t *pgd_now,uint32_t vaddr,uint32_t *paddr);//获取映射信息
-void pageFault(ProtectRegs_t *regs); //页中断处理，实现在/mm/page_fault.c
+void VMM_map(PGD_t* pgd_now, uint32_t vaddr, uint32_t paddr, uint32_t flags); //将物理地址映射到虚拟地址
+void VMM_unmap(PGD_t* pgd_now, uint32_t vaddr);//取消映射
+uint32_t VMM_getMapping(PGD_t* pgd_now, uint32_t vaddr, uint32_t* paddr);//获取映射信息
+void pageFault(ProtectRegs_t* regs); //页中断处理，实现在/mm/page_fault.c
 
 
 #endif

@@ -48,7 +48,7 @@ umount_image:
 
 .PHONY:run
 run:
-	qemu-system-x86_64 -m 64m -hda disk.img -boot c
+	qemu-system-x86_64 -m 4m -hda disk.img -boot c
 
 
 .PHONY:debug

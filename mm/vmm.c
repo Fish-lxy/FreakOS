@@ -5,29 +5,47 @@
 #include "pmm.h"
 #include "idt.h"
 
+// static PGD_t kernelPGD1[VMM_PGD_SIZE] __attribute__((aligned(VMM_PGSIZE))); //4B*1024=4KB 1p
+// static PTE_t kernelPTE1[VMM_PGD_COUNT][VMM_PTE_SIZE] __attribute__((aligned(VMM_PGSIZE))); //4B*256*1024=1024KB=1MB 256p
+
+
+#define PGD2pagen(pgd_size) (sizeof(PGD_t)*(pgd_size)/4096)
+#define PTE2pagen(pgd_count,pte_size) (sizeof(PTE_t)*(pgd_count)*(pte_size)/4096)
+
 //正式的内核页表和页目录
-static PGD_t kernelPGD[VMM_PGD_SIZE] __attribute__((aligned(VMM_PGSIZE)));
-static PTE_t kernelPTE[VMM_PGD_COUNT][VMM_PTE_SIZE] __attribute__((aligned(VMM_PGSIZE)));
+PageFrame_t* PGDpages;
+PageFrame_t* PTEpages;
+PGD_t* kernelPGD;
+PTE_t* kernelPTE;
+
+static void setKernelPGD();
 
 void initVMM() {
-    consoleWriteColor("Init Virtual Memory Management...", TC_black, TC_light_blue);
+    //printk("Init VMM...\n");
+    printk(" Setting new page table...");
+    //TODO
+    PGDpages = allocPhyPages(PGD2pagen(VMM_PGD_SIZE));
+    PTEpages = allocPhyPages(PTE2pagen(VMM_PGD_COUNT, VMM_PTE_SIZE));
+    kernelPGD = page2pa(PGDpages) + KERNEL_OFFSET;
+    kernelPTE = page2pa(PTEpages) + KERNEL_OFFSET;
 
-    //0xC0000000在页目录的索引
-    uint32_t kernelPTEFirstIdx = VMM_PGD_INDEX(KERNEL_OFFSET);
+    setKernelPGD();
+
+    interruptHandlerRegister(14, &pageFault);//设置页错误中断
+    uint32_t pgdKernelPhyAddr = (uint32_t) kernelPGD - KERNEL_OFFSET;
+    switchPGD(pgdKernelPhyAddr);
+    printk("OK\n");
+}
+void setKernelPGD() {
+    uint32_t kernelPTEFirstIdx = VMM_PGD_INDEX(KERNEL_OFFSET);//0xC0000000在页目录的索引
     for (uint32_t i = kernelPTEFirstIdx, j = 0;i < VMM_PGD_COUNT + kernelPTEFirstIdx;i++, j++) {
-        //MMU需要物理地址，减去偏移
-        kernelPGD[i] = ((uint32_t) kernelPTE[j] - KERNEL_OFFSET) | VMM_PAGE_PERSENT | VMM_PAGE_WRITEABLE;
+        kernelPGD[i] = ((uint32_t) & (kernelPTE[j * 1024]) - KERNEL_OFFSET) | VMM_PAGE_PERSENT | VMM_PAGE_WRITEABLE;
     }
-
     uint32_t* pte = (uint32_t*) kernelPTE;
     for (int i = 0;i < VMM_PGD_COUNT * VMM_PTE_SIZE;i++) {
         pte[i] = (i << 12) | VMM_PAGE_PERSENT | VMM_PAGE_WRITEABLE;
     }
-    uint32_t pgdKernelPhyAddr = (uint32_t) kernelPGD - KERNEL_OFFSET;
-    interruptHandlerRegister(14, &pageFault);//设置页错误中断
-    switchPGD(pgdKernelPhyAddr);
 
-    consoleWriteColor("OK\n", TC_black, TC_yellow);
 }
 void switchPGD(uint32_t pd) {
     asm volatile(
@@ -35,7 +53,7 @@ void switchPGD(uint32_t pd) {
         ::"r"(pd)
         );
 }
-void invaildate(uint32_t addr){
+void invaildate(uint32_t addr) {
     asm volatile(
         "invlpg (%0)"::"a"(addr)
         );
@@ -69,10 +87,10 @@ void VMM_unmap(PGD_t* pgd_now, uint32_t vaddr) {
 
     pte = (PTE_t*) ((uint32_t) pte + KERNEL_OFFSET);
     pte[pte_index] = 0;
-    
+
     invaildate(vaddr);
 }
-uint32_t VMM_getMapping(PGD_t* pgd_now, uint32_t vaddr, uint32_t *paddr) {
+uint32_t VMM_getMapping(PGD_t* pgd_now, uint32_t vaddr, uint32_t* paddr) {
     uint32_t pgd_index = VMM_PGD_INDEX(vaddr);
     uint32_t pte_index = VMM_PTE_INDEX(vaddr);
     PTE_t* pte = (PTE_t*) (pgd_now[pgd_index] & VMM_PAGE_MASK);

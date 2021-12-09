@@ -31,7 +31,7 @@ typedef uint32_t size_t;
             (typeof(a))(ROUNDDOWN((size_t)(a) + __n - 1, __n));     \
         })
 
-//Return the offset of 'member' relative to the beginning of a struct type
+
 //返回结构体 type 中成员 member 的字节偏移
 #define offsetof(type, member)                                      \
     ((size_t)(&((type *)0)->member))

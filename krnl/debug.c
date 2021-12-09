@@ -68,7 +68,7 @@ void printkColor(const char* format, TEXT_color_t back, TEXT_color_t fore, ...) 
 }
 inline void panic(const char* msg) {
     printk("\n*** System Panic: %s ***\n", msg);
-    //printStackTrace();
+    printStackTrace();
     printk("***\n");
 
     // 致命错误发生后循环
@@ -82,7 +82,13 @@ void printStackTrace() {
     asm volatile ("mov %%ebp, %0" : "=r" (ebp));
     while (ebp) {
         eip = ebp + 1;
-        printk("   [0x%x] %s\n", *eip, ELF_SymbolLookup(*eip, &kernel_elf));
+        const char* symbol = ELF_SymbolLookup(*eip, &kernel_elf);
+        if (symbol != NULL) {
+            printk("   stack:0x%08X %s\n", *eip, symbol);
+        }
+        else {
+            printk("   stack:0x%08X\n", *eip);
+        }
         ebp = (uint32_t*) *ebp;
     }
 }

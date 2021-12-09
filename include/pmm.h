@@ -11,14 +11,10 @@
 extern uint8_t kern_start[];//由链接器提供内核的起始虚拟地址(/script/kernel.ld)
 extern uint8_t kern_end[];
 //物理内存字节大小
-extern uint32_t PMM_PhyMemSize;
-extern uint32_t PMM_PhyMemEnd;
-//物理页框数量
+extern uint32_t PhyMemSize;
+extern uint32_t PhyMemEnd;
 
-extern uint32_t PMM_stack_PhyPageCount;
 
-//内核栈大小
-#define STACK_SIZE 8192
 //支持的最大物理内存(1GB)
 #define PMM_MEM_MAX_SIZE 0x40000000 //1GB
 //物理页框大小(4KB)
@@ -55,12 +51,14 @@ typedef struct FreeList
 
 extern PageFrame_t* Pages;
 extern FreeList FreeArea;
-extern uint32_t PMM_PageCount;
+extern uint32_t PageCount;
+extern uint32_t FreeMemStart;
 
 void initPMM();
 uint32_t allocPhyPage();
 void freePhyPage(uint32_t p);
-
+PageFrame_t* allocPhyPages(size_t n);
+void freePhyPages(PageFrame_t* base, size_t n);
 
 #define lp2page(le, member)                 \
     to_struct((le), PageFrame_t, member)
@@ -74,7 +72,7 @@ static inline uint32_t page2pa(PageFrame_t *page){
 }
 //由物理地址计算出该地址属于哪一页
 static inline PageFrame_t* pa2page(uint32_t pa) {
-    if((pa >> 12) > PMM_PageCount)
+    if((pa >> 12) > PageCount)
         panic("pa is invalid!");
     return &Pages[(pa >> 12)];
 }
@@ -85,7 +83,7 @@ static inline printPage(PageFrame_t *p){
     printk("pageAllocAddr:0x%08X\n",page2pa(p));
 }
 // static inline PageFrame_t* va2page(uint32_t va) {
-//     if(((va - KERNEL_OFFSET) >> 12) > PMM_PageCount)
+//     if(((va - KERNEL_OFFSET) >> 12) > PageCount)
 //         panic("va is invalid!");
 //     return &Pages[((va - KERNEL_OFFSET) >> 12)];
 // }

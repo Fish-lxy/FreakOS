@@ -15,14 +15,13 @@ MBOOT_HEADER_FLAGS 	equ 	MBOOT_PAGE_ALIGN | MBOOT_MEM_INFO
 ; 域checksum是一个32位的无符号值，要求 magic + flags + checksum = 0
 MBOOT_CHECKSUM 		equ 	- (MBOOT_HEADER_MAGIC + MBOOT_HEADER_FLAGS)
 
-; 符合Multiboot规范的 OS 映象需要这样一个 magic Multiboot 头
+; 符合Multiboot规范的 OS 映象需要这样一个 Multiboot 头
 ; Multiboot 头的分布必须如下表所示：
 ; ----------------------------------------------------------
 ; 偏移量  类型  域名        备注
 ;   0     u32   magic       必需
 ;   4     u32   flags       必需 
 ;   8     u32   checksum    必需 
-; 详细说明请参阅 GNU 相关文档
 ;-----------------------------------------------------------
 
 [BITS 32]  	; 所有代码以 32-bit 的方式编译

@@ -29,17 +29,19 @@ ELF_t ELF_FromMultiBoot(MultiBoot_t* mb) {
 // 查看ELF的符号信息
 const char* ELF_SymbolLookup(uint32_t addr, ELF_t* elf) {
 	addr += KERNEL_OFFSET;
-	int i;
 
-	for (i = 0; i < (elf->symtabsz / sizeof(ELF_Symbol_t)); i++) {
-		if (ELF32_ST_TYPE(elf->symtab[i].info) != 0x2) {
+	ELF_Symbol_t* elfsymtab = elf->symtab;
+	elfsymtab = (ELF_Symbol_t*) ((uint32_t) elfsymtab + KERNEL_OFFSET);
+	const char* elfstrtab = elf->strtab;
+	//elfstrtab = (const char*) ((uint32_t) elfsymtab);
+	for (int i = 0; i < (elf->symtabsz / sizeof(ELF_Symbol_t)); i++) {
+		if (ELF32_ST_TYPE(elfsymtab[i].info) != 0x2) {
 			continue;
 		}
 		// 通过函数调用地址查到函数的名字(地址在该函数的代码段地址区间之内)
-		if ((addr >= elf->symtab[i].value) && (addr < (elf->symtab[i].value + elf->symtab[i].size))) {
-			return (const char*) ((uint32_t) elf->strtab + elf->symtab[i].name);
+		if ((addr >= elfsymtab[i].value) && (addr < (elfsymtab[i].value + elfsymtab[i].size))) {
+			return (const char*) ((uint32_t) elfstrtab + elfsymtab[i].name);
 		}
 	}
-
 	return NULL;
 }

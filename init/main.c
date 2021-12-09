@@ -13,16 +13,19 @@ void main();
 
 void main() {
 	consoleClear();
-	consoleWriteColor(" Paging Enabled.\n", TC_black, TC_light_blue);
+	//printk(" Paging Enabled.\n");
+	
 
 	initDebug();
 	initGDT();
 	initIDT();
-	initVMM();
+	
 	initPMM();
+	initVMM();
 	initTimer();
 
-	consoleWriteColor("Loading LiteOS Kernel...\n", TC_black, TC_light_blue);
+	printk("\nLoading LiteOS Kernel...\n");
+	
 
 	//printSegStatus();
 
@@ -33,7 +36,7 @@ void main() {
 	// asm volatile ("int $0x03");
 	asm volatile ("sti"); //允许中断
 
-	printk("ok");
+	printk("OK.");
 	//panic("114514");
 	while (1) {
 		asm volatile("hlt");
