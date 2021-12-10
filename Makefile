@@ -9,11 +9,11 @@ CC = gcc
 LD = ld
 ASM = nasm
 
-C_FLAGS = -c -std=gnu99 -Wall -O1 -m32 -g3 -ggdb -gstabs+ -nostdinc -fno-pic -fno-builtin -fno-stack-protector -I include
+C_FLAGS = -c -O1 -std=gnu99 -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-pic -fno-builtin -fno-stack-protector -I include
 LD_FLAGS = -T scripts/kernel.ld -m elf_i386 -nostdlib
 ASM_FLAGS = -f elf -g -F stabs
 
-all: $(S_OBJECTS) $(C_OBJECTS) link update_image
+all: $(S_OBJECTS) $(C_OBJECTS) link update
 
 .c.o:
 	@echo 编译代码文件 $< ...
@@ -31,19 +31,19 @@ link:
 clean:
 	$(RM) $(S_OBJECTS) $(C_OBJECTS) kernel
 
-.PHONY:update_image
-update_image:
+.PHONY:update
+update:
 	sudo mount disk.img /mnt/kernel
 	sudo cp kernel /mnt/kernel/kernel
 	sleep 1
 	sudo umount /mnt/kernel
 
-.PHONY:mount_image
-mount_image:
+.PHONY:mount
+mount:
 	sudo mount disk.img /mnt/kernel
 
-.PHONY:umount_image
-umount_image:
+.PHONY:umount
+umount:
 	sudo umount /mnt/kernel
 
 .PHONY:run

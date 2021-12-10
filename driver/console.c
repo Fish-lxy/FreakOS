@@ -1,7 +1,7 @@
 #include "types.h"
 #include "io.h"
 #include "console.h"
-#include "vmm.h"
+#include "mm.h"
 
 //屏幕被划分为25行，每行80个字符，共2000个字符
 //0xb8000~0xbffff的内存地址空间被映射到文本模式的显存

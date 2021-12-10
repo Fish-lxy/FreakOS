@@ -1,7 +1,7 @@
 #include "string.h"
 #include "elf.h"
 #include "types.h"
-#include "vmm.h"
+#include "mm.h"
 
 // 从 multiboot_t 结构获取ELF信息
 ELF_t ELF_FromMultiBoot(MultiBoot_t* mb) {

@@ -5,9 +5,7 @@
 #include "idt.h"
 #include "multiboot.h"
 
-//Virtual Memory Management 虚拟内存管理(VMM)
-
-#define KERNEL_OFFSET 0xC0000000 //内核起始虚拟地址偏移
+//Virtual Memory Management 虚拟内存管理
 
 #define VMM_PGSIZE 0x1000 //页大小
 
@@ -17,7 +15,7 @@
 
 #define VMM_PAGE_MASK 0xFFFFF000
 
-//1PGD包含1024个PTE
+//1PGD包含1024个PTE,映射4MB内存地址
 //1PTE映射12位/4KB内存地址
 
 //获得一个虚拟地址的页目录项
@@ -27,25 +25,26 @@
 //获得一个虚拟地址的页内偏移
 #define VMM_OFFSET_INDEX(x) ((x) & 0xFFF)
 
+#define VMM_PGD_SIZE (VMM_PGSIZE/sizeof(PTE_t)) //1024
+#define VMM_PTE_SIZE (VMM_PGSIZE/sizeof(uint32_t)) //1024
+#define VMM_PGD_COUNT (MAX_PMM_MEM_SIZE/1024/4096) //256
+
 typedef uint32_t PGD_t; //页目录类型
 typedef uint32_t PTE_t; //页表类型
 
-#define VMM_PGD_SIZE (VMM_PGSIZE/sizeof(PTE_t)) //1024
-#define VMM_PTE_SIZE (VMM_PGSIZE/sizeof(uint32_t)) //1024
-#define VMM_PGD_COUNT (PMM_MEM_MAX_SIZE/1024/4096) //256
+typedef struct  mm_struct_t
+{
+    /* data */
+}mm_struct_t;
+
 
 void initVMM();
 void switchPGD(uint32_t pd); //切换页表
+
 void invaildate(uint32_t addr);//刷新页表缓存，使包含addr的页对应的TLB项失效
 void VMM_map(PGD_t* pgd_now, uint32_t vaddr, uint32_t paddr, uint32_t flags); //将物理地址映射到虚拟地址
 void VMM_unmap(PGD_t* pgd_now, uint32_t vaddr);//取消映射
 uint32_t VMM_getMapping(PGD_t* pgd_now, uint32_t vaddr, uint32_t* paddr);//获取映射信息
 void pageFault(InterruptFrame_t* regs); //页中断处理，实现在/mm/page_fault.c
-
-typedef struct mm_struct_t
-{
-    //TODO
-}mm_struct_t;
-
 
 #endif

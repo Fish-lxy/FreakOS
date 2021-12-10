@@ -1,6 +1,6 @@
 #include "types.h"
 #include "pmm.h"
-#include "vmm.h"
+#include "mm.h"
 
 void* kmalloc(uint32_t bytes) {
     int pagen = ROUNDUP(bytes, 4096) / PMM_PGSIZE;

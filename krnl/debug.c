@@ -4,7 +4,7 @@
 #include "elf.h"
 #include "multiboot.h"
 #include "pmm.h"
-#include "vmm.h"
+#include "mm.h"
 
 
 

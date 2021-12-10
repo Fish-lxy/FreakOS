@@ -6,7 +6,7 @@
 #include "timer.h"
 #include "multiboot.h"
 #include "pmm.h"
-#include "vmm.h"
+#include "mm.h"
 //内核启动入口，初始化页表并开启分页，然后转到main
 
 //内核栈大小

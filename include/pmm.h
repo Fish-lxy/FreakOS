@@ -8,21 +8,23 @@
 
 // Physical Memory Management 物理内存管理(PMM)
 
-extern uint8_t kern_start[];//由链接器提供内核的起始虚拟地址(/script/kernel.ld)
-extern uint8_t kern_end[];
+
 //物理内存字节大小
 extern uint32_t PhyMemSize;
 extern uint32_t PhyMemEnd;
 
-
 //支持的最大物理内存(1GB)
-#define PMM_MEM_MAX_SIZE 0x40000000 //1GB
+#define MAX_PMM_MEM_SIZE 0x40000000 //1GB
 //物理页框大小(4KB)
 #define PMM_PGSIZE 0x1000
-//物理页面数量
-#define PMM_PAGE_MAX_COUNT (PMM_MEM_MAX_SIZE/PMM_PGSIZE)
 //页面掩码
 #define PMM_PAGE_MASK 0xFFFFF000
+
+#define PG_reserved 0x1
+#define PG_property 0x2
+
+#define PGP_reserved 0
+#define PGP_property 1
 
 typedef struct PageFrame_t
 {
@@ -36,12 +38,6 @@ typedef struct PageFrame_t
     //uint32_t addr;    
     list_ptr_t ptr;
 }PageFrame_t;
-
-#define PG_reserved 0x1
-#define PG_property 0x2
-
-#define PGP_reserved 0
-#define PGP_property 1
 
 typedef struct FreeList
 {
@@ -65,36 +61,31 @@ void kfree(uint32_t* p, uint32_t bytes);
     to_struct((le), PageFrame_t, member)
 
 //由PageFrame_t地址计算出页框是第几页
-static inline uint32_t page2pagen(PageFrame_t *page){
+static inline uint32_t page2pagen(PageFrame_t* page) {
     return page - Pages;
 }
-static inline uint32_t page2pa(PageFrame_t *page){
+static inline uint32_t page2pa(PageFrame_t* page) {
     return page2pagen(page) << 12;
 }
 //由物理地址计算出该地址属于哪一页
 static inline PageFrame_t* pa2page(uint32_t pa) {
-    if((pa >> 12) > PageCount)
+    if ((pa >> 12) > PageCount)
         panic("pa is invalid!");
     return &Pages[(pa >> 12)];
 }
 
-static inline printPage(PageFrame_t *p){
-    printk("pageAddr:0x%08X ",p);
-    printk("flag:%d property:%d  ",p->flags,p->property);
-    printk("pageAllocAddr:0x%08X\n",page2pa(p));
-}
-// static inline PageFrame_t* va2page(uint32_t va) {
-//     if(((va - KERNEL_OFFSET) >> 12) > PageCount)
-//         panic("va is invalid!");
-//     return &Pages[((va - KERNEL_OFFSET) >> 12)];
+// static inline printPage(PageFrame_t* p) {
+//     printk("pageAddr:0x%08X ", p);
+//     printk("flag:%d property:%d  ", p->flags, p->property);
+//     printk("pageAllocAddr:0x%08X\n", page2pa(p));
 // }
 
-static inline printPageList(){
-    printk("PageList:\n");
-    list_ptr_t* lp = &(FreeArea.ptr);
-    while ((lp = listGetNext(lp)) != &(FreeArea.ptr)) {
-        PageFrame_t* p = lp2page(lp, ptr);
-        printPage(p);
-    }
-}
+// static inline printPageList() {
+//     printk("PageList:\n");
+//     list_ptr_t* lp = &(FreeArea.ptr);
+//     while ((lp = listGetNext(lp)) != &(FreeArea.ptr)) {
+//         PageFrame_t* p = lp2page(lp, ptr);
+//         printPage(p);
+//     }
+// }
 #endif

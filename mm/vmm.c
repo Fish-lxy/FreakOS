@@ -1,16 +1,10 @@
 #include "types.h"
 #include "string.h"
 #include "debug.h"
+#include "mm.h"
 #include "vmm.h"
 #include "pmm.h"
 #include "idt.h"
-
-// static PGD_t kernelPGD1[VMM_PGD_SIZE] __attribute__((aligned(VMM_PGSIZE))); //4B*1024=4KB 1p
-// static PTE_t kernelPTE1[VMM_PGD_COUNT][VMM_PTE_SIZE] __attribute__((aligned(VMM_PGSIZE))); //4B*256*1024=1024KB=1MB 256p
-
-
-#define PGD2pagen(pgd_size) (sizeof(PGD_t)*(pgd_size)/4096)
-#define PTE2pagen(pgd_count,pte_size) (sizeof(PTE_t)*(pgd_count)*(pte_size)/4096)
 
 //正式的内核页表和页目录
 PGD_t* kernelPGD;
@@ -23,16 +17,11 @@ static void setKernelPGD();
 void initVMM() {
     //printk("Init VMM...\n");
     printk(" Setting new page table...");
-    //TODO
 
-    kernelPGD = kmalloc(sizeof(PGD_t) * VMM_PGD_SIZE);
-    kernelPTE = kmalloc(sizeof(PTE_t) * VMM_PGD_COUNT * VMM_PTE_SIZE);
+    kernelPGD = kmalloc(sizeof(PGD_t) * VMM_PGD_SIZE);//4B*1024=4KB 1phypage
+    kernelPTE = kmalloc(sizeof(PTE_t) * VMM_PGD_COUNT * VMM_PTE_SIZE);//4B*256*1024=1024KB=1MB 256phypage
 
     setKernelPGD();
-
-    // printk("\nPGD:0x%08X\n", kernelPGD);
-    // printk("PTE:0x%08X\n", kernelPTE);
-    //while (1);
 
     interruptHandlerRegister(14, &pageFault);//设置页错误中断
     kernel_cr3 = (uint32_t) kernelPGD - KERNEL_OFFSET;
@@ -57,6 +46,7 @@ void switchPGD(uint32_t pd) {
         ::"r"(pd)
         );
 }
+
 void invaildate(uint32_t addr) {
     asm volatile(
         "invlpg (%0)"::"a"(addr)
