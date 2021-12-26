@@ -98,14 +98,14 @@ ISR_CommonStub:
 	;mov ss, bx
 	
 	
-	pop gs	; 恢复原来的段描述符
+	pop gs		; 恢复原来的段描述符
 	pop fs
 	pop es
 	pop ds
-	popa
-	                     ; 弹出 edi, esi, ebp, esp, ebx, edx, ecx, eax
-	add esp, 8               ; 清理栈里的 error code 和 ISR
-	iret
+	popa		; 弹出 edi, esi, ebp, esp, ebx, edx, ecx, eax
+
+	add esp, 8	; 清理栈里的 error code 和 ISR
+	iret		; 出栈 CS, EIP, EFLAGS, SS, ESP
 .end:
 
 
@@ -122,7 +122,7 @@ irq%1:
     jmp IRQ_CommonStub
 %endmacro
 
-IRQ   0,    32  ; 电脑系统计时器
+IRQ   0,    32  ; 系统计时器
 IRQ   1,    33  ; 键盘
 IRQ   2,    34  ; 与 IRQ9 相接，MPU-401 MD 使用
 IRQ   3,    35  ; 串口设备
@@ -143,29 +143,29 @@ IRQ  15,    47  ; IDE1 传输控制使用
 [EXTERN IRQ_handlerCall]
 IRQ_CommonStub:
     pusha                ; pushes edi, esi, ebp, esp, ebx, edx, ecx, eax
+	push ds	; 保存段描述符
+	push es
+	push fs
+	push gs
     
-    mov ax, ds
-    push eax             ; 保存数据段描述符
+    
     
     mov ax, 0x10         ; 加载内核数据段描述符
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov ss, ax
     
     push esp
     call IRQ_handlerCall
-    add esp, 4
-    
-    pop ebx              ; 恢复原来的数据段描述符
-    mov ds, bx
-    mov es, bx
-    mov fs, bx
-    mov gs, bx
-    mov ss, bx
-    
-    popa                 ; Pops edi,esi,ebp...
-    add esp, 8           ; 清理压栈的 错误代码 和 ISR 编号
-    iret                 ; 出栈 CS, EIP, EFLAGS, SS, ESP
+    pop esp
+
+	pop gs		; 恢复原来的段描述符
+	pop fs
+	pop es
+	pop ds
+	popa		; 弹出 edi, esi, ebp, esp, ebx, edx, ecx, eax
+
+	add esp, 8	; 清理栈里的 error code 和 ISR
+	iret		; 出栈 CS, EIP, EFLAGS, SS, ESP
 .end:

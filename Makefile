@@ -9,7 +9,7 @@ CC = gcc
 LD = ld
 ASM = nasm
 
-C_FLAGS = -c -O1 -std=gnu99 -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-pic -fno-builtin -fno-stack-protector -I include
+C_FLAGS = -c -O0 -std=gnu99 -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-pic -fno-builtin -fno-stack-protector -I include
 LD_FLAGS = -T scripts/kernel.ld -m elf_i386 -nostdlib
 ASM_FLAGS = -f elf -g -F stabs
 
@@ -33,10 +33,12 @@ clean:
 
 .PHONY:update
 update:
-	sudo mount disk.img /mnt/kernel
+	sudo losetup /dev/loop1 disk.img -o 1048576
+	sudo mount /dev/loop1 /mnt/kernel
 	sudo cp kernel /mnt/kernel/kernel
 	sleep 1
 	sudo umount /mnt/kernel
+	sudo losetup -d /dev/loop1
 
 .PHONY:mount
 mount:
@@ -49,6 +51,10 @@ umount:
 .PHONY:run
 run:
 	qemu-system-x86_64 -m 16m -hda disk.img -boot c
+
+.PHONY:run2
+run2:
+	qemu-system-x86_64 -m 16m -hda disk.img -hdb disk2.img -boot c
 
 
 .PHONY:debug

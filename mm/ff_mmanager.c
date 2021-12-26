@@ -33,7 +33,7 @@ void ff_memmap_init(PageFrame_t* base, size_t n) {
         }
     }
     base->property = n;
-    base->flags = SetBitOne(base->flags, PGP_property);
+    SetBitOne(&(base->flags), PGP_property);
     FreeArea.free_page_count += n;
     listAdd(&(FreeArea.ptr), &(base->ptr));
 }
@@ -58,12 +58,12 @@ PageFrame_t* ff_alloc_pages(size_t n) {
         if (page->property > n) {
             PageFrame_t* p = page + n;
             p->property = page->property - n;
-            p->flags = SetBitOne(p->flags, PGP_property);
+            SetBitOne(&(p->flags), PGP_property);
             listAdd(&(page->ptr), &(p->ptr));
         }
         listDel(&(page->ptr));
         FreeArea.free_page_count -= n;
-        page->flags = SetBitZero(page->flags, PGP_property);
+        SetBitZero(&(page->flags), PGP_property);
         page->property = n;
     }
     return page;
@@ -79,7 +79,7 @@ void ff_free_pages(PageFrame_t* base, size_t n) {
         p->ref = 0;
     }
     base->property = n;
-    base->flags = SetBitOne(base->flags, PGP_property);
+    SetBitOne(&(base->flags), PGP_property);
 
     list_ptr_t* lp = listGetNext(&(FreeArea.ptr));
     while (lp != &(FreeArea.ptr)) {
@@ -89,13 +89,13 @@ void ff_free_pages(PageFrame_t* base, size_t n) {
         //要free的块位于下一个块为首部，向下合并
         if (base + base->property == p) {
             base->property += p->property;
-            p->property = SetBitZero(p->flags, PGP_property);
+            SetBitZero(&(p->flags), PGP_property);
             listDel(&(p->ptr));
         }
         //要free的块位于上一个块尾部，向上合并
         else if (p + p->property == base) {
             p->property += base->property;
-            base->property = SetBitZero(base->flags, PGP_property);
+            SetBitZero(&(base->flags), PGP_property);
             base = p;
             listDel(&(p->ptr));
         }

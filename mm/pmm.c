@@ -68,7 +68,7 @@ void pagesInit() {
     //先将所有页都设定为保留
     for (uint32_t i = 0;i < PageCount;i++) {
         Pages[i].flags = 0;
-        Pages[i].flags = SetBitOne(Pages[i].flags, PGP_reserved);
+        SetBitOne(&(Pages[i].flags), PGP_reserved);
     }
     //空闲内存起始于Pages数组结束后新的一页
     FreeMemStart = ROUNDUP((void*) (&(Pages[PageCount])), PMM_PGSIZE) - KERNEL_OFFSET;

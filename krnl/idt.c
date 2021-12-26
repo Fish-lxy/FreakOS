@@ -1,7 +1,7 @@
 #include "idt.h"
 #include "string.h"
 #include "types.h"
-#include "io.h"
+#include "cpu.h"
 #include "console.h"
 #include "debug.h"
 

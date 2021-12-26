@@ -18,13 +18,13 @@
 
 #define KSTACKSIZE 8192
 
-typedef enum task_state_t {
+typedef enum TaskState_e {
     TASK_UNINIT = 0,
     TASK_SLEEPING = 1,
     TASK_RUNNABLE = 2,
     TASK_ZOMBIE = 3
-}task_state_t;
-// typedef enum task_state_t task_state_t;
+}TaskState_e;
+// typedef enum task_state_t TaskState_e;
 
 typedef
 struct Context_t {
@@ -45,12 +45,11 @@ typedef
 struct Task_t {
     int32_t pid;
     char name[TASK_NAME_LEN + 1];
-    task_state_t state;
+    TaskState_e state;
     int runs;
     uint32_t* kstack;
-    volatile uint8_t need_resched;
-    uint32_t flags;
 
+    uint32_t flags;
     Task_t* parent;
     mm_struct_t* mm;
     Context_t context;
@@ -60,7 +59,24 @@ struct Task_t {
     list_ptr_t ptr;
 }Task_t;
 
-#define lp2task(le, member)                 \
-    to_struct((le), Task_t, member)
+typedef
+struct TaskList_t {
+    list_ptr_t ptr;
+}TaskList_t;
+
+#define lp2task(lp, member)                 \
+    to_struct((lp), Task_t, member)
+
+
+extern uint8_t KernelStack[];
+Task_t* current;
+Task_t* idle_task;
+Task_t* init_task;
+
+TaskList_t TaskList; //任务链表首节点
+uint32_t TaskCount;
+extern uint32_t kernel_cr3; // mm/vmm.c
+
+void schedule();
 
 #endif

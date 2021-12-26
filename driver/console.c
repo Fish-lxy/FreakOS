@@ -1,5 +1,5 @@
 #include "types.h"
-#include "io.h"
+#include "cpu.h"
 #include "console.h"
 #include "mm.h"
 

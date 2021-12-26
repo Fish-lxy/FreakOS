@@ -1,17 +1,19 @@
 #include "timer.h"
 #include "types.h"
 #include "idt.h"
-#include "io.h"
+#include "cpu.h"
+#include "task.h"
 #include "debug.h"
 
 #define FREQUENCY 100
 
 void timerCallBack() {
     Timer_SysTick++;
-    if(Timer_SysTick % 100 == 0){
+    if(Timer_SysTick % FREQUENCY == 0){
         Timer_SysSecond++;
-        //printk("Time: %d\r",Timer_SysSecond);
+        //printk("Time: %d\n",Timer_SysSecond);
     }
+    schedule();
 }
 void initTimer() {
     //consoleWriteColor("Init Timer...", TC_black, TC_light_blue);
@@ -28,10 +30,10 @@ void initTimer() {
 
     // 拆分低字节和高字节
     uint8_t low = (uint8_t) (divisor & 0xFF);
-    uint8_t hign = (uint8_t) ((divisor >> 8) & 0xFF);
+    uint8_t high = (uint8_t) ((divisor >> 8) & 0xFF);
 
     // 分别写入低字节和高字节
     outb(0x40, low);
-    outb(0x40, hign);
+    outb(0x40, high);
     //consoleWriteColor("OK\n", TC_black, TC_yellow);
 }

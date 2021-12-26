@@ -81,5 +81,5 @@ void initGDT();
 // GDT 加载到 GDTR(汇编实现：krnl/gdt_s.s) 
 extern void flushGDT(uint32_t);
 
-
+void load_esp0(uint32_t esp0);
 #endif

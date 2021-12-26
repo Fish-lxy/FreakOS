@@ -1,4 +1,5 @@
 #include "gdt.h"
+#include "cpu.h"
 #include "string.h"
 #include "types.h"
 #include "console.h"
@@ -29,8 +30,6 @@ void initGDT() {
     //gdtPtr.base = (uint32_t) &gdtEntries;
     gdtPtr.base = (uint32_t) GDT;
 
-    printk("0x%08X\n", &GDT);
-
     TS.ts_esp0 = (uint32_t) KernelStack;
     TS.ts_ss0 = KERNEL_DS;
 
@@ -41,7 +40,6 @@ void initGDT() {
     GDT_SetSegGate(3, STA_X | STA_R, 0x0, 0xFFFFFFFF, DPL_USER);// 用户模式代码段
     GDT_SetSegGate(4, STA_W, 0x0, 0xFFFFFFFF, DPL_USER); // 用户模式数据段
     GDT_SetSegTSSGate(5, STS_T32A, &TS, sizeof(TS), DPL_KERNEL);
-    //GDT_SetNullSegGate(5);//TSS
 
     // 加载全局描述符表地址到 GPTR 寄存器
     flushGDT((uint32_t) &gdtPtr);
@@ -108,5 +106,8 @@ static void GDT_SetSegTSSGate(uint32_t n, uint32_t type, uint32_t base, uint32_t
     GDT[n].sd_base_31_24 = (unsigned) (base) >> 24;
 }
 static inline void flushTSS(uint16_t sel) {
-    asm volatile ("ltr %0" :: "r" (sel) : "memory");
+    ltr(sel);
+}
+void load_esp0(uint32_t esp0) {
+    TS.ts_esp0 = esp0;
 }

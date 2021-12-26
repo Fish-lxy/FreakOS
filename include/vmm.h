@@ -43,6 +43,7 @@ void switchPGD(uint32_t pd); //切换页表
 
 void invaildate(uint32_t addr);//刷新页表缓存，使包含addr的页对应的TLB项失效
 void VMM_map(PGD_t* pgd_now, uint32_t vaddr, uint32_t paddr, uint32_t flags); //将物理地址映射到虚拟地址
+
 void VMM_unmap(PGD_t* pgd_now, uint32_t vaddr);//取消映射
 uint32_t VMM_getMapping(PGD_t* pgd_now, uint32_t vaddr, uint32_t* paddr);//获取映射信息
 void pageFault(InterruptFrame_t* regs); //页中断处理，实现在/mm/page_fault.c

@@ -1,0 +1,64 @@
+#include "debug.h"
+#include "cpu.h"
+#include "kmalloc.h"
+#include "types.h"
+#include "task.h"
+#include "pmm.h"
+#include "vmm.h"
+#include "idt.h"
+#include "gdt.h"
+#include "list.h"
+#include "string.h"
+#include "debug.h"
+#include "intr_sync.h"
+
+void schedule();
+static void runTask(Task_t* next_task);
+
+void schedule() {
+    bool intrflag;
+    list_ptr_t* now, * temp;
+    Task_t* next = NULL;
+    Task_t* task = NULL;
+    intr_save(intrflag);
+    {
+        now = &(current->ptr);
+        temp = now;
+        while (1) {
+            temp = listGetNext(temp);
+            if (temp == &(TaskList.ptr)) {
+                continue;
+            }
+
+            task = lp2task(temp, ptr);
+            if(TaskCount != 1 && task->pid == 0){
+                continue;
+            }
+            if (task->state != TASK_RUNNABLE) {
+                continue;
+            }
+            else {
+                next = task;
+                break;
+            }
+        }
+        runTask(next);
+    }
+    intr_restore(intrflag);
+}
+void runTask(Task_t* next_task) {
+    if (next_task != current) {
+        Task_t* prev = current;
+        Task_t* next = next_task;
+
+        bool flag;
+        intr_save(flag);
+        {
+            current = next_task;
+            load_esp0(next->kstack + KSTACKSIZE);
+            lcr3(next->cr3);
+            switch_to_s(&(prev->context), &(next->context));
+        }
+        intr_restore(flag)
+    }
+}

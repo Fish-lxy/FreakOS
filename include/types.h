@@ -10,6 +10,7 @@
 #define FALSE 0
 #endif
 
+typedef int bool;
 typedef unsigned char  uint8_t;
 typedef          char  int8_t;
 typedef unsigned short uint16_t;
@@ -50,11 +51,12 @@ static inline uint32_t GetBit(uint32_t num, uint32_t pos) {
     return (num >> pos) & 1;
 }
 //将无符号数 num 中第 pos 位置 1 (从第 0 位开始)
-static inline uint32_t SetBitOne(uint32_t num, uint32_t pos){
-    return num | (1 << (pos));  
+static inline void SetBitOne(uint32_t *num, uint32_t pos){
+    (*num) = (*num) | (1 << (pos));  
 }
 //将无符号数 num 中第 pos 位置 0 (从第 0 位开始)
-static inline uint32_t SetBitZero(uint32_t num, uint32_t pos){  
-    return num & ~(1 << (pos));  
-}  
+static inline void SetBitZero(uint32_t *num, uint32_t pos){  
+    (*num) = (*num) & ~(1 << (pos));  
+}
+
 #endif
