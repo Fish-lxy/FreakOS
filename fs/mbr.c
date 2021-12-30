@@ -10,15 +10,15 @@ void initMBR() {
     mbr = kmalloc(sizeof(MBR_Info_t));
     readMBR_Info(&main_blockdev);
 
-    showPartitionInfo();
+    printPartitionInfo();
 }
 int readMBR_Info(BlockDev_t* blockdev) {
     IOrequest_t req = { IO_READ, 0, 1, mbr, 512 };
-    if(blockdev->ops.request(&req) != 0){
+    if (blockdev->ops.request(&req) != 0) {
         panic("IO error!");
     }
 }
-int showPartitionInfo() {
+int printPartitionInfo() {
     printk("\nPartition Info:\n");
     for (int i = 0; i < MBR_PARTITION_COUNT; ++i) {
         char* active = NULL;
@@ -34,11 +34,12 @@ int showPartitionInfo() {
 
         if (mbr->partinfo[i].partition_type != 0) {
             printk(" Active: %s/0x%02X  ", active, mbr->partinfo[i].active);
-            printk(" Type: %s/0x%02X\n", getPartType(mbr->partinfo[i].partition_type), mbr->partinfo[i].partition_type);
-            printk(" CHS: %02X%02X%02X", mbr->partinfo[i].start_chs[0],
-                mbr->partinfo[i].start_chs[1], mbr->partinfo[i].start_chs[2]);
-            printk("-%02X%02X%02X\n", mbr->partinfo[i].end_chs[0],
-                mbr->partinfo[i].end_chs[1], mbr->partinfo[i].end_chs[2]);
+            printk(" Type: %s/0x%02X\n",
+                getPartType(mbr->partinfo[i].partition_type), mbr->partinfo[i].partition_type);
+            printk(" CHS: %02X%02X%02X",
+                mbr->partinfo[i].start_chs[0], mbr->partinfo[i].start_chs[1], mbr->partinfo[i].start_chs[2]);
+            printk("-%02X%02X%02X\n",
+                mbr->partinfo[i].end_chs[0], mbr->partinfo[i].end_chs[1], mbr->partinfo[i].end_chs[2]);
             printk(" Start: %04u  ", mbr->partinfo[i].start_sector);
             printk("Count: %05u\n", mbr->partinfo[i].nsectors);
         }

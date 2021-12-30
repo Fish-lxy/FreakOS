@@ -23,7 +23,8 @@ typedef
 struct MBR_Info_t {
     uint8_t code[MBR_CODE_LEN];
     PartitionInfo_t partinfo[MBR_PARTITION_COUNT];
-    uint16_t magic;
+    uint8_t magic_55;
+    uint8_t magic_AA;
 } __attribute__((packed)) MBR_Info_t;
 
 extern MBR_Info_t* mbr;
@@ -32,7 +33,7 @@ extern MBR_Info_t* mbr;
 
 void initMBR();
 int readMBR_Info(BlockDev_t *blockdev);
-int showPartitionInfo();
+int printPartitionInfo();
 const char* getPartType(int type);
 
 

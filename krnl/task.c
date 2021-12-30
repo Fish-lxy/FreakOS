@@ -20,7 +20,7 @@ static Task_t* allocTask();
 static char* setTaskName(Task_t* task, const char* name);
 static char* getTaskName(Task_t* task);
 static uint32_t getNewPid();
-static void wakeuptask(Task_t* task);
+static void wakeupTask(Task_t* task);
 static int32_t setupNewKstack(Task_t* task);
 
 void kernel_thread_entry_s();
@@ -104,7 +104,7 @@ char* getTaskName(Task_t* task) {
     memset(name, 0, sizeof(name));
     return memcpy(name, task->name, TASK_NAME_LEN);
 }
-void wakeuptask(Task_t* task) {
+void wakeupTask(Task_t* task) {
     task->state = TASK_RUNNABLE;
 }
 uint32_t getNewPid() {
@@ -144,9 +144,11 @@ int32_t do_fork(uint32_t clone_flags, uint32_t stack, InterruptFrame_t* _if) {
     int ret;
     task->parent = current;
     if (setupNewKstack(task) != 0) {
+        ret = ERR_NO_MEM;
         goto failed_and_clean_task;
     }
     if (copy_mm(clone_flags, task) != 0) {
+        ret = ERR_NO_MEM;
         goto failed_and_clean_kstack;
     }
     copy_task(task, stack, _if);
@@ -155,12 +157,13 @@ int32_t do_fork(uint32_t clone_flags, uint32_t stack, InterruptFrame_t* _if) {
     intr_save(flag);
     {
         task->pid = getNewPid();
+        ret = task->pid;
         listAdd(&TaskList.ptr, &(task->ptr));
         TaskCount++;
     }
     intr_restore(flag);
 
-    wakeuptask(task);
+    wakeupTask(task);
 
 out:
     return ret;

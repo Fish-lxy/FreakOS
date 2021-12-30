@@ -16,11 +16,11 @@ bool flag = TRUE;
 extern BlockDev_t main_blockdev;
 // 系统的第二个进程 init
 int init_task_func(void* arg) {
-    //init将会接手 main 函数的工作，继续内核的初始化
-    printk("init process:\n");
+    //init进程将会接手 main 函数的工作，继续内核的初始化
+    printk("Start init process:\n");
     initBlockdev();
     initMBR();
-    fat32_test();
+    initFAT();
 
     //printk("Msg: %s\n", (const char*) arg);
 
