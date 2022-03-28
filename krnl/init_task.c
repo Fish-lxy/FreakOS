@@ -10,7 +10,7 @@
 
 #include "ide.h"
 #include "mbr.h"
-#include "fat32.h"
+#include "fat.h"
 
 bool flag = TRUE;
 extern BlockDev_t main_blockdev;

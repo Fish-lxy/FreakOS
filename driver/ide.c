@@ -11,6 +11,8 @@ IDEchannel_t channels[2] = {
 IDEdevice ide_devices[MAX_IDE];
 
 static int ide_wait_ready(unsigned short iobase, bool check_error);
+static int ide_read_secs(unsigned short ideno, uint32_t secno, void* dst, size_t nsecs);
+static int ide_write_secs(uint16_t ideno, uint32_t secno, const void* src, size_t nsecs);
 
 static int ide_wait_ready(unsigned short iobase, bool check_error) {
     int r;
@@ -20,13 +22,57 @@ static int ide_wait_ready(unsigned short iobase, bool check_error) {
     }
     return 0;
 }
+static int ide_read_secs(uint16_t ideno, uint32_t secno, void* dst, size_t nsecs) {
+    assert(nsecs <= MAX_NSECS && VALID_IDE(ideno), "nsecs is invalid!");
+    assert(secno <= MAX_DISK_NSECS && secno + nsecs <= MAX_DISK_NSECS, "secno is invalid!");
+    uint16_t iobase = IO_BASE(ideno);
+    uint16_t ioctrl = IO_CTRL(ideno);
 
+    ide_wait_ready(iobase, 0);
 
-// void ideInit() {
-//     for (int i = 0;i < MAX_IDE;i++) {
-//         _ide_device_init(i);
-//     }
-// }
+    outb(ioctrl + ISA_CTRL, 0);
+    outb(iobase + ISA_SECCNT, nsecs);
+    outb(iobase + ISA_SECTOR, secno & 0xFF);
+    outb(iobase + ISA_CYL_LO, (secno >> 8) & 0xFF);
+    outb(iobase + ISA_CYL_HI, (secno >> 16) & 0xFF);
+    outb(iobase + ISA_SDH, 0xE0 | ((ideno & 1) << 4) | ((secno >> 24) & 0xF));
+    outb(iobase + ISA_COMMAND, IDE_CMD_READ);
+
+    int ret = 0;
+    for (;nsecs > 0;nsecs--, dst += SECTSIZE) {
+        if ((ret = ide_wait_ready(iobase, 1)) != 0) {
+            goto out;
+        }
+        insl(iobase, dst, SECTSIZE / sizeof(uint32_t));
+    }
+out:
+    return ret;
+}
+static int ide_write_secs(uint16_t ideno, uint32_t secno, const void* src, size_t nsecs) {
+    assert(nsecs <= MAX_NSECS && VALID_IDE(ideno), "nsecs is invalid!");
+    assert(secno < MAX_DISK_NSECS&& secno + nsecs <= MAX_DISK_NSECS, "secno is invalid!");
+    uint16_t iobase = IO_BASE(ideno), ioctrl = IO_CTRL(ideno);
+
+    ide_wait_ready(iobase, 0);
+
+    outb(ioctrl + ISA_CTRL, 0);
+    outb(iobase + ISA_SECCNT, nsecs);
+    outb(iobase + ISA_SECTOR, secno & 0xFF);
+    outb(iobase + ISA_CYL_LO, (secno >> 8) & 0xFF);
+    outb(iobase + ISA_CYL_HI, (secno >> 16) & 0xFF);
+    outb(iobase + ISA_SDH, 0xE0 | ((ideno & 1) << 4) | ((secno >> 24) & 0xF));
+    outb(iobase + ISA_COMMAND, IDE_CMD_WRITE);
+
+    int ret = 0;
+    for (; nsecs > 0; nsecs--, src += SECTSIZE) {
+        if ((ret = ide_wait_ready(iobase, 1)) != 0) {
+            goto out;
+        }
+        outsl(iobase, src, SECTSIZE / sizeof(uint32_t));
+    }
+out:
+    return ret;
+}
 
 int _ide_request(uint32_t ideno, IOrequest_t* req) {
     if (ideno < 0 || ideno > 3) {
@@ -120,55 +166,4 @@ int _ide_device_init(uint16_t ideno) {
     } while (i-- > 0 && desc[i] == ' ');
     
     return 0;
-}
-int ide_read_secs(uint16_t ideno, uint32_t secno, void* dst, size_t nsecs) {
-    assert(nsecs <= MAX_NSECS && VALID_IDE(ideno), "nsecs is invalid!");
-    assert(secno <= MAX_DISK_NSECS && secno + nsecs <= MAX_DISK_NSECS, "secno is invalid!");
-    uint16_t iobase = IO_BASE(ideno);
-    uint16_t ioctrl = IO_CTRL(ideno);
-
-    ide_wait_ready(iobase, 0);
-
-    outb(ioctrl + ISA_CTRL, 0);
-    outb(iobase + ISA_SECCNT, nsecs);
-    outb(iobase + ISA_SECTOR, secno & 0xFF);
-    outb(iobase + ISA_CYL_LO, (secno >> 8) & 0xFF);
-    outb(iobase + ISA_CYL_HI, (secno >> 16) & 0xFF);
-    outb(iobase + ISA_SDH, 0xE0 | ((ideno & 1) << 4) | ((secno >> 24) & 0xF));
-    outb(iobase + ISA_COMMAND, IDE_CMD_READ);
-
-    int ret = 0;
-    for (;nsecs > 0;nsecs--, dst += SECTSIZE) {
-        if ((ret = ide_wait_ready(iobase, 1)) != 0) {
-            goto out;
-        }
-        insl(iobase, dst, SECTSIZE / sizeof(uint32_t));
-    }
-out:
-    return ret;
-}
-int ide_write_secs(uint16_t ideno, uint32_t secno, const void* src, size_t nsecs) {
-    assert(nsecs <= MAX_NSECS && VALID_IDE(ideno), "nsecs is invalid!");
-    assert(secno < MAX_DISK_NSECS&& secno + nsecs <= MAX_DISK_NSECS, "secno is invalid!");
-    uint16_t iobase = IO_BASE(ideno), ioctrl = IO_CTRL(ideno);
-
-    ide_wait_ready(iobase, 0);
-
-    outb(ioctrl + ISA_CTRL, 0);
-    outb(iobase + ISA_SECCNT, nsecs);
-    outb(iobase + ISA_SECTOR, secno & 0xFF);
-    outb(iobase + ISA_CYL_LO, (secno >> 8) & 0xFF);
-    outb(iobase + ISA_CYL_HI, (secno >> 16) & 0xFF);
-    outb(iobase + ISA_SDH, 0xE0 | ((ideno & 1) << 4) | ((secno >> 24) & 0xF));
-    outb(iobase + ISA_COMMAND, IDE_CMD_WRITE);
-
-    int ret = 0;
-    for (; nsecs > 0; nsecs--, src += SECTSIZE) {
-        if ((ret = ide_wait_ready(iobase, 1)) != 0) {
-            goto out;
-        }
-        outsl(iobase, src, SECTSIZE / sizeof(uint32_t));
-    }
-out:
-    return ret;
 }

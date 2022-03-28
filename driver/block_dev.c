@@ -14,13 +14,16 @@ void initBlockdev() {
     printk("Detected disk device:\n");
     for (int i = 0;i < MAX_IDE - 2;i++) {
         setIde(i);
-        blockdevs_index++;
-        blockdevs[i].ops.init();
+        
+        if(blockdevs[i].ops.init() != 0){//若设备不存在
+            continue;
+        }
         if(blockdevs[i].ops.is_vaild() == TRUE){
             printk(" IDE %d: %dMB, '%s'.\n"
                 , i, blockdevs[i].ops.get_nr_block() * blockdevs[i].block_size / 1024 / 1024, blockdevs[i].ops.get_desc());
         }
-        
+        blockdevs_index++;
+
     }
 
     main_blockdev = blockdevs[0];

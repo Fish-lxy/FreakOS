@@ -41,7 +41,7 @@ void main() {
 	
 	sti();//允许中断
 	
-	//此条 main 执行流将会蜕变为第 0号进程 idle
+	//此条 main 执行流将会蜕变为第 0 号进程 idle
 	cpu_idle();
 	// int i = 0;
 	// while (1) {

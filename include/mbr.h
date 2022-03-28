@@ -10,6 +10,17 @@
 #define MBR_PARTITION_COUNT 4
 
 typedef
+enum PartitionType_e {
+    PartitionType_Unused = 0x00,
+    PartitionType_FAT16 = 0x06,
+    PartitionType_FAT32 = 0x0B,
+    PartitionType_Extend = 0x05,
+    PartitionType_NTFS = 0x07,
+    PartitionType_LBAextend = 0x0F,
+    PartitionType_Linux = 0x83
+} PartitionType_e;
+
+typedef
 struct PartitionInfo_t {
     uint8_t active;
     uint8_t start_chs[3];
@@ -29,10 +40,14 @@ struct MBR_Info_t {
 
 extern MBR_Info_t* mbr;
 
+#define PART_COUNT 4
+
+
 #define PART_START_SECTOR(x) (mbr->partinfo[(x)].start_sector)
+#define PART_TYPE(x) (mbr->partinfo[(x)].partition_type)
 
 void initMBR();
-int readMBR_Info(BlockDev_t *blockdev);
+int readMBR_Info(BlockDev_t* blockdev);
 int printPartitionInfo();
 const char* getPartType(int type);
 

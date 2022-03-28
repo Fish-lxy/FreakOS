@@ -34,6 +34,13 @@ int32_t copy_task(Task_t* task, uint32_t esp, InterruptFrame_t* _if);
 void do_exit(int err_code);
 static void forkret(void);
 
+Task_t* current;
+Task_t* idle_task;
+Task_t* init_task;
+
+TaskList_t TaskList; //任务链表首节点
+uint32_t TaskCount;
+
 
 void initTask() {
     initList(&(TaskList.ptr));
@@ -62,7 +69,7 @@ void initTask() {
     }
     int pid2 = createKernelThread(test_task, "Hello, world!", 0);
     //printk("%d\n", TaskCount);;
-    
+
 }
 Task_t* allocTask() {
     Task_t* task = (Task_t*) kmalloc(sizeof(Task_t));
@@ -198,13 +205,21 @@ static void forkret(void) {
 }
 //进程终止处理，本函数不能返回
 void do_exit(int err_code) {
-    //panic("process exit!!.");
-    current->state = TASK_ZOMBIE;
-    bool flag;
-    intr_save(flag);
-    {
-        printk("process exit!\n");
+    if(current == idle_task){
+        panic("Trying to exit idle!");
     }
-    intr_restore(flag);
+    //panic("process exit!!.");
+    if (current->mm == NULL) {
+        current->state = TASK_ZOMBIE;
+        bool flag;
+        intr_save(flag);
+        {
+            printk("process exit!\n");
+        }
+        intr_restore(flag);
+        
+    }
+
     schedule();
+    panic("do_exit will not return!");
 }

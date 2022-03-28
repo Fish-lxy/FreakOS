@@ -15,6 +15,10 @@
 void schedule();
 static void runTask(Task_t* next_task);
 
+extern Task_t* current;
+extern TaskList_t TaskList; //任务链表首节点
+extern uint32_t TaskCount;
+
 void schedule() {
     bool intrflag;
     list_ptr_t* now, * temp;
@@ -31,7 +35,7 @@ void schedule() {
             }
 
             task = lp2task(temp, ptr);
-            if(TaskCount != 1 && task->pid == 0){
+            if (TaskCount != 1 && task->pid == 0) {
                 continue;
             }
             if (task->state != TASK_RUNNABLE) {

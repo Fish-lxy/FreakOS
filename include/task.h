@@ -69,12 +69,7 @@ struct TaskList_t {
 
 
 extern uint8_t KernelStack[];
-Task_t* current;
-Task_t* idle_task;
-Task_t* init_task;
 
-TaskList_t TaskList; //任务链表首节点
-uint32_t TaskCount;
 extern uint32_t kernel_cr3; // mm/vmm.c
 
 void schedule();

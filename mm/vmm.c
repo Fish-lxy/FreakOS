@@ -16,7 +16,7 @@ static void setKernelPGD();
 
 void initVMM() {
     //printk("Init VMM...\n");
-    printk(" Setting new page table...");
+    printk("Setting new page table...");
 
     kernelPGD = kmalloc(sizeof(PGD_t) * VMM_PGD_SIZE);//4B*1024=4KB 1phypage
     kernelPTE = kmalloc(sizeof(PTE_t) * VMM_PGD_COUNT * VMM_PTE_SIZE);//4B*256*1024=1024KB=1MB 256phypage

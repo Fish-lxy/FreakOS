@@ -22,6 +22,16 @@ static inline void* memset(void* dest, uint8_t val, uint32_t len) {
     }
     return dest;
 }
+static int memcmp(const void* buffer1, const void* buffer2, int count){
+    if (!count)
+        return(0);
+    while (--count && *(char*) buffer1 == *(char*) buffer2)
+    {
+        buffer1 = (char*) buffer1 + 1;
+        buffer2 = (char*) buffer2 + 1;
+    }
+    return(*((unsigned char*) buffer1) - *((unsigned char*) buffer2));
+}
 static inline void bzero(void* dest, uint32_t len) {
     memset(dest, 0, len);
 }

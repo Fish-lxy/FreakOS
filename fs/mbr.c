@@ -3,14 +3,26 @@
 #include "block_dev.h"
 #include "mbr.h"
 #include "pmm.h"
+#include "fat.h"
 
 extern BlockDev_t main_blockdev;
 MBR_Info_t* mbr;
+extern BlockDev_t blockdevs[MAX_BLOCK_DEV];
+PARTITION Drives[8];
+
 void initMBR() {
     mbr = kmalloc(sizeof(MBR_Info_t));
     readMBR_Info(&main_blockdev);
 
     printPartitionInfo();
+
+
+    for (int i = 0;i < MBR_PARTITION_COUNT;i++) {
+        if (mbr->partinfo[i].partition_type != 0) {
+            Drives[i].pd = 0;
+            Drives[i].pd = i;
+        }
+    }
 }
 int readMBR_Info(BlockDev_t* blockdev) {
     IOrequest_t req = { IO_READ, 0, 1, mbr, 512 };

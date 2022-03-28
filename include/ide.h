@@ -82,8 +82,7 @@ uint32_t _ide_get_nr_block(uint32_t ideno);
 const char* _ide_get_desc(uint32_t ideno);
 int _ide_ioctl(uint32_t ideno,int op, int flag);
 
-int ide_read_secs(unsigned short ideno, uint32_t secno, void* dst, size_t nsecs);
-int ide_write_secs(uint16_t ideno, uint32_t secno, const void* src, size_t nsecs);
+
 
 void setIde(uint32_t ideno);
 

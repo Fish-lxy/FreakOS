@@ -36,7 +36,7 @@ update:
 	sudo losetup /dev/loop1 disk.img -o 1048576
 	sudo mount /dev/loop1 /mnt/kernel
 	sudo cp kernel /mnt/kernel/kernel
-	sleep 1
+	sync
 	sudo umount /mnt/kernel
 	sudo losetup -d /dev/loop1
 
