@@ -42,7 +42,7 @@ struct ELF_t {
 } ELF_t;
 
 // 从 multiboot_t 结构获取ELF信息
-ELF_t ELF_FromMultiBoot(MultiBoot_t *mb);
+void ELF_FromMultiBoot(MultiBoot_t *mb, ELF_t* out);
 
 // 查看ELF的符号信息
 const char *ELF_LookupSymbol(uint32_t addr, ELF_t *elf);

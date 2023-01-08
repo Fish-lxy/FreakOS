@@ -7,6 +7,7 @@
 #include "multiboot.h"
 #include "pmm.h"
 #include "mm.h"
+
 //内核启动入口，初始化页表并开启分页，然后转到main
 
 //内核栈大小
@@ -17,7 +18,7 @@ extern void main();//内核初始化入口
 MultiBoot_t* GlbMbootPtr;
 uint8_t KernelStack[STACK_SIZE]; //内核栈
 
-//内核临时页表和页目录的地址
+//内核临时页表和页目录的首地址
 __attribute__((section(".temp.data"))) PGD_t* PGD_temp = (PGD_t*) 0x1000;
 __attribute__((section(".temp.data"))) PGD_t* PTE_low = (PGD_t*) 0x2000;
 __attribute__((section(".temp.data"))) PGD_t* PTE_high = (PGD_t*) 0x3000;
@@ -35,6 +36,7 @@ void kernel_entry() {
 		);
 	//更新MutiBoot指针位置
 	GlbMbootPtr = (MultiBoot_t*) ((uint32_t) TempMbootPtr + KERNEL_OFFSET);
+	
 	//调用内核初始化入口
 	main();
 }

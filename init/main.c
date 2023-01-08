@@ -18,6 +18,7 @@ void main() {
 	//printk(" Paging Enabled.\n");
 
 	initDebug();
+	
 	initGDT();
 	initIDT();
 

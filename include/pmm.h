@@ -32,10 +32,13 @@ typedef struct PageFrame_t
     //位0表示保留内存，用来表示不可用的内存和已被内核占用的内存
     //位1表示管理位，表示加入FreeArea链表，可以被申请的内存
     uint32_t flags;
+    //property内存分配器管理字段
     //位1被设置为1时，此字段表示此块空闲内存包含的空闲块数量
     uint32_t property;
+    //引用数量
     uint32_t ref;
-    //uint32_t addr;    
+    //uint32_t addr;
+
     list_ptr_t ptr;
 }PageFrame_t;
 

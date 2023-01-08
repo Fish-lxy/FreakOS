@@ -11,9 +11,19 @@
 extern int vsprintf(char* buf, const char* fmt, va_list args); //lib/vsprintf.c
 static ELF_t kernel_elf;//内核ELF结构，跟踪栈帧用
 
+
 void initDebug() {
     //consoleWriteColor("Init Debug Unit...", TC_black, TC_light_blue);
-    kernel_elf = ELF_FromMultiBoot(GlbMbootPtr);
+
+    ELF_FromMultiBoot(GlbMbootPtr, &kernel_elf);
+    //kernel_elf = (ELF_t*) ( (uint32_t*) kernel_elf + KERNEL_OFFSET);
+    //printk("[debug]elf2_info:0x%08X\n", kernel_elf2);
+    //printk("ELF_Symbol_t *symtab:0x%08X addr:0x%08X\n", kernel_elf.symtab, &(kernel_elf.symtab));
+    //printk("uint32_t      symtabsz:0x%08X addr:0x%08X\n", kernel_elf.symtabsz, &(kernel_elf.symtabsz));
+    //printk("const char   *strtab:0x%08X addr:0x%08X\n", kernel_elf.strtab, &(kernel_elf.strtab));
+    //printk("uint32_t      strtabsz:0x%08X addr:0x%08X\n", kernel_elf.strtabsz, &(kernel_elf.strtabsz));
+    //while(1){}
+    panic("error");
     //consoleWriteColor("OK\n", TC_black, TC_yellow);
 }
 void printSegStatus() {
@@ -71,10 +81,10 @@ void printkColor(const char* format, TEXT_color_t back, TEXT_color_t fore, ...) 
 
 void _panic(const char* msg, const char* filename) {
     printk("\n*** System Panic ***\n");
-    printk("A fatal error occurred\n");
-    printk("in %s\n", filename);
-    printStackTrace();
+    printk("A fatal error occurred!!!\n");
     printk("msg: %s\n", msg);
+    printk("in %s\n\n", filename);
+    printStackTrace();
     printk("********************\n");
 
     // 致命错误发生后循环
@@ -91,7 +101,9 @@ void printStackTrace() {
     asm volatile ("mov %%ebp, %0" : "=r" (ebp));
     while (ebp) {
         eip = ebp + 1;
+        
         const char* symbol = ELF_SymbolLookup(*eip, &kernel_elf);
+        
         if (symbol != NULL) {
             printk("stack:0x%08X %s\n", *eip, symbol);
         }

@@ -127,6 +127,7 @@ int32_t createKernelThread(int (*func)(void*), void* arg, uint32_t clone_flags) 
     // 保存内核线程的临时中断帧
 
     InterruptFrame_t interruptFrame;
+    
     memset(&interruptFrame, 0, sizeof(InterruptFrame_t));
     interruptFrame.cs = KERNEL_CS;
     interruptFrame.ds = interruptFrame.es = interruptFrame.ss = KERNEL_DS;

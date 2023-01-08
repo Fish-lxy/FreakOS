@@ -46,6 +46,11 @@ SECTIONS
         . = ALIGN(4096);
     }
     
+    .symtab : AT( ADDR(.symtab) - 0xC0000000)
+    {
+        *(.symtab)
+        . = ALIGN(4096);
+    }
     .stabstr : AT( ADDR(.stabstr) - 0xC0000000)
     {
         *(.stabstr)
