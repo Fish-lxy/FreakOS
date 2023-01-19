@@ -4,7 +4,7 @@
 #include "types.h"
 #include "mm.h"
 
-// 从 multiboot_t 结构获取ELF信息
+// 从 Multiboot_t 结构获取ELF信息
 void ELF_FromMultiBoot(MultiBoot_t* mb, ELF_t* out) {
 	int i;
 	ELF_SectionHeader_t* sh = (ELF_SectionHeader_t*) mb->addr;
@@ -18,19 +18,16 @@ void ELF_FromMultiBoot(MultiBoot_t* mb, ELF_t* out) {
 			out->strtabsz = sh[i].size;
 		}
 		if (strcmp(name, ".symtab") == 0) {
-			
-			//printk("[elf_find]out->symtab:0x%08X\n", out->symtab);
-			if(out->symtab <= KERNEL_OFFSET){
-				out->symtab = (ELF_Symbol_t*) ((uint32_t)sh[i].addr + KERNEL_OFFSET);
-			}else{
-                out->symtab = (ELF_Symbol_t*) sh[i].addr;
-            }
+			if (out->symtab <= KERNEL_OFFSET) {
+				out->symtab = (ELF_Symbol_t*) ((uint32_t) sh[i].addr + KERNEL_OFFSET);
+			}
+			else {
+				out->symtab = (ELF_Symbol_t*) sh[i].addr;
+			}
 
-			
 			out->symtabsz = sh[i].size;
 		}
 	}
-
 }
 
 // 查看ELF的符号信息
@@ -39,7 +36,7 @@ const char* ELF_SymbolLookup(uint32_t addr, ELF_t* elf) {
 	elfsymtab = (ELF_Symbol_t*) ((uint32_t) elfsymtab);
 	const char* elfstrtab = elf->strtab;
 	//elfstrtab = (const char*) ((uint32_t) elfsymtab);
-	
+
 	for (int i = 0; i < (elf->symtabsz / sizeof(ELF_Symbol_t)); i++) {
 		if (ELF32_ST_TYPE(elfsymtab[i].info) != 0x2) {
 			continue;

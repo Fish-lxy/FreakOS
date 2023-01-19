@@ -4,6 +4,7 @@
 #include "mm.h"
 #include "vmm.h"
 #include "pmm.h"
+#include "kmalloc.h"
 #include "idt.h"
 
 //正式的内核页表和页目录
@@ -16,7 +17,7 @@ static void setKernelPGD();
 
 void initVMM() {
     //printk("Init VMM...\n");
-    printk("Setting new page table...");
+    printk("Setting new kernel page table...");
 
     kernelPGD = kmalloc(sizeof(PGD_t) * VMM_PGD_SIZE);//4B*1024=4KB 1phypage
     kernelPTE = kmalloc(sizeof(PTE_t) * VMM_PGD_COUNT * VMM_PTE_SIZE);//4B*256*1024=1024KB=1MB 256phypage
@@ -29,13 +30,23 @@ void initVMM() {
 
     printk("OK\n");
 }
+
+//设置正式内核页目录和页表的内容
 void setKernelPGD() {
-    uint32_t kernelPTEFirstIdx = VMM_PGD_INDEX(KERNEL_OFFSET);//0xC0000000在页目录的索引
-    for (uint32_t i = kernelPTEFirstIdx, j = 0;i < VMM_PGD_COUNT + kernelPTEFirstIdx;i++, j++) {
-        kernelPGD[i] = ((uint32_t) & (kernelPTE[j * 1024]) - KERNEL_OFFSET) | VMM_PAGE_PERSENT | VMM_PAGE_WRITEABLE;
+    //4GB虚拟地址空间共256个页目录项，每个页目录项指向有1024个页表
+    uint32_t kernelPTEfirstidx = VMM_PGD_INDEX(KERNEL_OFFSET);//获取虚拟地址0xC0000000在页目录的索引号
+
+    //设置页目录项
+    for (uint32_t i = kernelPTEfirstidx, j = 0;
+        i < VMM_PGD_COUNT + kernelPTEfirstidx;
+        i++, j++)
+    {
+        //每个页目录项指向一个页表，一个页表有1024个项目
+        kernelPGD[i] = ((uint32_t) & (kernelPTE[j * VMM_PTE_SIZE]) - KERNEL_OFFSET) | VMM_PAGE_PERSENT | VMM_PAGE_WRITEABLE;
     }
+    //设置所有页表项，使其指向4GB物理地址
     uint32_t* pte = (uint32_t*) kernelPTE;
-    for (int i = 0;i < VMM_PGD_COUNT * VMM_PTE_SIZE;i++) {
+    for (int i = 0; i < VMM_PGD_COUNT * VMM_PTE_SIZE; i++) {
         pte[i] = (i << 12) | VMM_PAGE_PERSENT | VMM_PAGE_WRITEABLE;
     }
 
@@ -70,6 +81,8 @@ void VMM_map(PGD_t* pgd_now, uint32_t vaddr, uint32_t paddr, uint32_t flags) {
     invaildate(vaddr);
 
 }
+
+
 void VMM_unmap(PGD_t* pgd_now, uint32_t vaddr) {
     uint32_t pgd_index = VMM_PGD_INDEX(vaddr);
     uint32_t pte_index = VMM_PTE_INDEX(vaddr);

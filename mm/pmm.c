@@ -8,18 +8,18 @@
 #include "list.h"
 
 
-static void getMemInfo();//获取物理内存信息
+static void getMemInfo();//从MultiBoot_t中获取物理内存信息
 static void pmmanagerInit();//初始化内存管理器
 static void freeAreaInit();
 static void pagesInit();//设置Pages数组，将数组中的所有Page设为reserved
-static void memmapInit(PageFrame_t* base, size_t n);
+static void memmapInit(PageBlock_t* base, size_t n);
 
 static PMManager_t Manager;//物理内存管理器
 uint32_t PhyMemSize;//物理内存字节大小
 uint32_t PhyMemEnd;//可用物理内存结尾
 
 uint32_t PageCount;// 所有的物理内存页框数量
-PageFrame_t* Pages;//Page结构保存起始虚拟地址
+PageBlock_t* Pages;//Page结构保存起始虚拟地址
 uint32_t FreeMemStart;//可用内存起始物理地址
 FreeList FreeArea;//空闲区域链表
 
@@ -40,6 +40,7 @@ void initPMM() {
 
 void pmmanagerInit() {
     PMManager_t* m = get_FF_PMManager();
+
     Manager.alloc_pages = m->alloc_pages;
     Manager.free_area_init = m->free_area_init;
     Manager.free_pages = m->free_pages;
@@ -61,8 +62,8 @@ void getMemInfo() {
 }
 void pagesInit() {
     uint32_t end = kern_end;
-    //Page起始于内核结束后新的一页
-    Pages = (PageFrame_t*) ROUNDUP((void*) end, PMM_PGSIZE);
+    //Pages起始于内核结束后新的一页
+    Pages = (PageBlock_t*) ROUNDUP((void*) end, PMM_PGSIZE);
 
     PageCount = PhyMemSize / PMM_PGSIZE;
     //先将所有页都设定为保留
@@ -74,15 +75,34 @@ void pagesInit() {
     FreeMemStart = ROUNDUP((void*) (&(Pages[PageCount])), PMM_PGSIZE) - KERNEL_OFFSET;
 
 }
+
+
 void freeAreaInit() {
     Manager.free_area_init();
 }
-void memmapInit(PageFrame_t* base, size_t n) {
+void memmapInit(PageBlock_t* base, size_t n) {
     Manager.memmap_init(base, n);
 }
-PageFrame_t* allocPhyPages(size_t n) {
+
+
+PageBlock_t* allocPhyPages(size_t n) {
     return Manager.alloc_pages(n);
 }
-void freePhyPages(PageFrame_t* base, size_t n) {
+void freePhyPages(PageBlock_t* base, size_t n) {
     Manager.free_pages(base, n);
+}
+
+uint32_t getFreeMem() {
+    list_ptr_t* lp = listGetNext(&(FreeArea.ptr));
+    PageBlock_t* p;
+    uint32_t free_pageblocks = 0;
+    uint32_t free_membytes = 0;
+    while (lp != &(FreeArea.ptr)) {
+        //p指向第一个Pages块
+        p = lp2page(lp, ptr);
+        free_pageblocks += p->property;
+        free_membytes += (free_pageblocks * PMM_PGSIZE);
+        lp = listGetNext(lp);
+    }
+    return free_membytes;
 }

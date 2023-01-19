@@ -9,6 +9,8 @@
 #include "pmm.h"
 #include "vmm.h"
 
+#include "kmalloc.h"
+
 void int3();
 void cpu_idle();
 void main();
@@ -28,7 +30,9 @@ void main() {
 	initTask();
 	initTimer();
 
-	printk("\nLoading LiteOS Kernel...\n");
+	printk("\nLoading FreakOS Kernel...\n");
+
+	//testKmalloc();
 	//printSegStatus();
 
 	//printKernelMemStauts();

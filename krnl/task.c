@@ -62,8 +62,9 @@ void initTask() {
     TaskCount++;
     current = idle_task;
 
+    
     int pid = createKernelThread(init_task_func, "Hello, world!", 0);
-
+    
     if (pid < 0) {
         panic("create init process failed.");
     }

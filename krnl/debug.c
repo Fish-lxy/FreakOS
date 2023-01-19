@@ -16,14 +16,7 @@ void initDebug() {
     //consoleWriteColor("Init Debug Unit...", TC_black, TC_light_blue);
 
     ELF_FromMultiBoot(GlbMbootPtr, &kernel_elf);
-    //kernel_elf = (ELF_t*) ( (uint32_t*) kernel_elf + KERNEL_OFFSET);
-    //printk("[debug]elf2_info:0x%08X\n", kernel_elf2);
-    //printk("ELF_Symbol_t *symtab:0x%08X addr:0x%08X\n", kernel_elf.symtab, &(kernel_elf.symtab));
-    //printk("uint32_t      symtabsz:0x%08X addr:0x%08X\n", kernel_elf.symtabsz, &(kernel_elf.symtabsz));
-    //printk("const char   *strtab:0x%08X addr:0x%08X\n", kernel_elf.strtab, &(kernel_elf.strtab));
-    //printk("uint32_t      strtabsz:0x%08X addr:0x%08X\n", kernel_elf.strtabsz, &(kernel_elf.strtabsz));
-    //while(1){}
-    panic("error");
+
     //consoleWriteColor("OK\n", TC_black, TC_yellow);
 }
 void printSegStatus() {

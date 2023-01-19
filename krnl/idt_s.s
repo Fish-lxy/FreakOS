@@ -72,7 +72,8 @@ ISR_NOERRCODE 170 ;设定170号中断(0xAA)为系统调用
 [EXTERN ISR_handlerCall]
 ; 中断服务程序
 ISR_CommonStub:
-	pusha	; 压入 edi, esi, ebp, esp, ebx, edx, ecx, eax
+	;设置中断帧
+	pusha	; 顺序压入 eax, ecx, edx, ebx, esp, ebp, esi, edi
 	push ds	; 保存段描述符
 	push es
 	push fs
@@ -85,18 +86,9 @@ ISR_CommonStub:
 	mov gs, ax
 	;mov ss, ax
 	
-	push esp	; 此时的 esp 寄存器的值等价于 ProtectRegs_t 结构体的指针
+	push esp	; 压入函数参数，此时的 esp 寄存器的值等价于 InterruptFrame_t 结构体的指针
 	call ISR_handlerCall	; 在 C 代码里
-	pop esp		; 清除压入的参数
-	;add esp, 4 	
-	
-	;pop ebx	
-	;mov ds, bx
-	;mov es, bx
-	;mov fs, bx
-	;mov gs, bx
-	;mov ss, bx
-	
+	add esp, 4 	; 清除压入的参数
 	
 	pop gs		; 恢复原来的段描述符
 	pop fs
@@ -156,9 +148,9 @@ IRQ_CommonStub:
     mov fs, ax
     mov gs, ax
     
-    push esp
+    push esp	; 压入函数参数，此时的 esp 寄存器的值等价于 InterruptFrame_t 结构体的指针
     call IRQ_handlerCall
-    pop esp
+    add esp, 4 	; 清除压入的参数
 
 	pop gs		; 恢复原来的段描述符
 	pop fs

@@ -18,9 +18,9 @@
 //1PGD包含1024个PTE,映射4MB内存地址
 //1PTE映射12位/4KB内存地址
 
-//获得一个虚拟地址的页目录项
+//获得一个虚拟地址的页目录项索引
 #define VMM_PGD_INDEX(x) (((x) >> 22) & 0x3FF)
-//获得一个虚拟地址的页表项
+//获得一个虚拟地址的页表项索引
 #define VMM_PTE_INDEX(x) (((x) >> 12) & 0x3FF)
 //获得一个虚拟地址的页内偏移
 #define VMM_OFFSET_INDEX(x) ((x) & 0xFFF)

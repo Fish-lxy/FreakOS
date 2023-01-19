@@ -13,7 +13,7 @@ void pageFault(InterruptFrame_t* regs) {
 
     // bit 0 为 0 指页面不存在内存里
     if (!(regs->err_code & 0x1)) {
-        printk(" Because the page wasn't present.\n");
+        printk(" the page wasn't present.\n");
     }
     // bit 1 为 0 表示读错误，为 1 为写错误
     if (regs->err_code & 0x2) {
@@ -38,7 +38,6 @@ void pageFault(InterruptFrame_t* regs) {
         printk(" The fault occurred during an instruction fetch.\n");
     }
 
-    while (1){
-        asm volatile("hlt");
-    }
+    //todo
+    panic("fatal memory error!");
 }

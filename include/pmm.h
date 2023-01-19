@@ -26,7 +26,7 @@ extern uint32_t PhyMemEnd;
 #define PGP_reserved 0
 #define PGP_property 1
 
-typedef struct PageFrame_t
+typedef struct PageBlock_t
 {
     //flag标志字段
     //位0表示保留内存，用来表示不可用的内存和已被内核占用的内存
@@ -40,7 +40,7 @@ typedef struct PageFrame_t
     //uint32_t addr;
 
     list_ptr_t ptr;
-}PageFrame_t;
+}PageBlock_t;
 
 typedef struct FreeList
 {
@@ -48,36 +48,36 @@ typedef struct FreeList
     uint32_t free_page_count;
 }FreeList;
 
-extern PageFrame_t* Pages;
+extern PageBlock_t* Pages;
 extern FreeList FreeArea;
 extern uint32_t PageCount;
 extern uint32_t FreeMemStart;
 
 void initPMM();
-PageFrame_t* allocPhyPages(size_t n);
-void freePhyPages(PageFrame_t* base, size_t n);
+PageBlock_t* allocPhyPages(size_t n);
+void freePhyPages(PageBlock_t* base, size_t n);
+uint32_t getFreeMem();
 
-void* kmalloc(uint32_t bytes);
-void kfree(uint32_t* p, uint32_t bytes);
+
 
 #define lp2page(le, member)                 \
-    to_struct((le), PageFrame_t, member)
+    to_struct((le), PageBlock_t, member)
 
 //由PageFrame_t地址计算出页框是第几页
-static inline uint32_t page2pagen(PageFrame_t* page) {
+static inline uint32_t page2pagen(PageBlock_t* page) {
     return page - Pages;
 }
-static inline uint32_t page2pa(PageFrame_t* page) {
+static inline uint32_t page2pa(PageBlock_t* page) {
     return page2pagen(page) << 12;
 }
 //由物理地址计算出该地址属于哪一页
-static inline PageFrame_t* pa2page(uint32_t pa) {
+static inline PageBlock_t* pa2page(uint32_t pa) {
     if ((pa >> 12) > PageCount)
         panic("pa is invalid!");
     return &Pages[(pa >> 12)];
 }
 
-// static inline printPage(PageFrame_t* p) {
+// static inline printPage(PageBlock_t* p) {
 //     printk("pageAddr:0x%08X ", p);
 //     printk("flag:%d property:%d  ", p->flags, p->property);
 //     printk("pageAllocAddr:0x%08X\n", page2pa(p));
@@ -87,7 +87,7 @@ static inline PageFrame_t* pa2page(uint32_t pa) {
 //     printk("PageList:\n");
 //     list_ptr_t* lp = &(FreeArea.ptr);
 //     while ((lp = listGetNext(lp)) != &(FreeArea.ptr)) {
-//         PageFrame_t* p = lp2page(lp, ptr);
+//         PageBlock_t* p = lp2page(lp, ptr);
 //         printPage(p);
 //     }
 // }

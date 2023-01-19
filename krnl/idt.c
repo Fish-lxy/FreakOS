@@ -5,6 +5,16 @@
 #include "console.h"
 #include "debug.h"
 
+// 中断处理
+// idtr寄存器长48位，其中保存着中断描述符表首地址和表长
+// 中断描述符表由多个IDT_Entry_t结构体组成，其中保存着中断服务例程首地址，中断服务例程由汇编宏函数(isr%/irq%)开始
+// 中断处理过程：
+// 1，出现中断，CPU调用中断汇编宏函数isr%/irq%
+// 2，调用ISR_CommonStub，设置好中断帧InterruptFrame_t，中断帧中保存着中断号
+// 3，调用ISR_handlerCall，转到C语言代码，从InterruptFrame_t 中的中断号选择中断函数由根据中断号，执行interruptHandlers函数数组中对应的具体中断处理函数
+
+
+
 // 中断描述符表
 IDT_Entry_t idt_entries[256];
 
@@ -58,7 +68,7 @@ void initIDT() {
 
 	bzero((uint8_t*) &idt_entries, sizeof(IDT_Entry_t) * 256);
 
-	// 0-32:  用于 CPU 的中断处理
+	// 0-30:  用于 CPU 的中断处理
 	IDT_setGate(0, (uint32_t) isr0, 0x08, 0x8E);
 	IDT_setGate(1, (uint32_t) isr1, 0x08, 0x8E);
 	IDT_setGate(2, (uint32_t) isr2, 0x08, 0x8E);
@@ -132,6 +142,7 @@ void IDT_setGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
 }
 
 // 调用 ISR 中断处理函数，由汇编调用
+// 由InterruptFrame_t 中的中断号，执行interruptHandlers函数数组中对应的中断处理函数
 void ISR_handlerCall(InterruptFrame_t* pr) {
 	//由 InterruptFrame_t 中的中断号选择中断处理函数
 	if (interruptHandlers[pr->int_no]) { 

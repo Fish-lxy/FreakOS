@@ -20,7 +20,7 @@ SECTIONS
     }
     
 
-    . += 0xC0000000;
+    . += 0xC0000000;/*设置虚拟地址*/
     .text : AT( ADDR(.text) - 0xC0000000)
     {
         *(.text)

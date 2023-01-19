@@ -1,15 +1,258 @@
 #include "types.h"
+#include "debug.h"
 #include "pmm.h"
 #include "mm.h"
+#include "kmalloc.h"
+
+static int getBucketSlot(int size);
+static Bucket_t* allocBucket();
+static int32_t initBucket(Bucket_t* bk, int size);
+static void* doKmalloc(uint32_t size);
+static int32_t doKfree(void* addr, uint32_t size);
 
 //为内核数据结构申请内存，分配的内存地址带3GB偏移
 void* kmalloc(uint32_t bytes) {
-    int pagen = ROUNDUP(bytes, 4096) / PMM_PGSIZE;
-    PageFrame_t* paddr = allocPhyPages(pagen);
-    return (void*) (page2pa(paddr) + KERNEL_OFFSET);
-
+    return doKmalloc(bytes);
 }
-void kfree(uint32_t* vaddr, uint32_t bytes) {
-    int pagen = ROUNDUP(bytes, 4096) / PMM_PGSIZE;
-    freePhyPages(pa2page(vaddr - KERNEL_OFFSET), pagen);
+void kfree(void* vaddr, uint32_t bytes) {
+    uint32_t err = doKfree(vaddr, bytes);
+    if(err == -1){
+        panic("kfree: error size");
+    }else if(err == -2){
+        panic("kfree: addr is not available!");
+    }
+}
+
+
+
+Bucket_t BucketTable[] = {
+    { 32, 0, NULL, NULL },
+    { 64, 0, NULL, NULL },
+    { 128, 0, NULL, NULL },
+    { 256, 0, NULL, NULL },
+    { 512, 0, NULL, NULL },
+    { 1024, 0, NULL, NULL },
+    { 2048, 0, NULL, NULL },
+    { 4096, 0, NULL, NULL }
+};
+Bucket_t BucketFreeList = { 0, };
+int InitBucketCount = 0;
+
+//计算size大小的内存应该对应的桶号
+int getBucketSlot(int size) {
+    int n, i;
+
+    if (size <= 0)
+        return -1;
+    n = 16;
+    i = 0;
+    while ((n <<= 1) <= PMM_PGSIZE) {
+        if (size <= n) {
+            return i;
+        }
+        i++;
+    }
+    return -1;
+}
+
+//申请一个空桶，所有的空桶都保存在BucketFreeList中
+//若BucketFreeList中无空桶，申请一页内存并将其分割
+Bucket_t* allocBucket() {
+    Bucket_t* p, * q, * bkfreelist_head;
+    uint32_t page_addr, page_end_addr;
+
+    bkfreelist_head = &BucketFreeList;
+    //若无空桶，申请一页内存并将其分割
+    if (BucketFreeList.next == NULL) {
+        page_addr = page2pa(allocPhyPages(1)) + KERNEL_OFFSET;
+        page_end_addr = page_addr + PMM_PGSIZE;
+
+        q = &BucketFreeList;
+        p = (Bucket_t*) page_addr;
+
+        while ((uint32_t) p < page_end_addr) {
+            p++;
+            q->next = p;
+            p->next = NULL;
+            q = p;
+        }
+    }
+
+    //获取一个空桶
+    p = BucketFreeList.next;
+    BucketFreeList.next = p->next;
+
+    return p;
+}
+
+int32_t initBucket(Bucket_t* bk, int size) {
+    uint32_t page_addr;
+    BkEntry_t* q, * p;
+
+    page_addr = page2pa(allocPhyPages(1)) + KERNEL_OFFSET;
+
+    bk->page = page_addr;
+    bk->size = size;
+
+    bk->entry = q = (BkEntry_t*) (page_addr);
+    //按size平均分割内存页，每一个块为一个BucketEntry_t结构，下面的循环使每个块链接起来
+    for (int i = 0;i < PMM_PGSIZE / size;i++) {
+        p = (BkEntry_t*) (page_addr + i * size);//p移动向下一个块
+        q->bke_next = p;//使p的前一个块q与p链接
+        p->bke_next = NULL;//清空p的next
+        q = p;//指针q向p移动
+    }
+    return 0;
+}
+void* doKmalloc(uint32_t size) {
+    if (size == 0) {
+        return 0;
+    }
+    if (size >= PMM_PGSIZE) {
+        int pagen = ROUNDUP(size, 4096) / PMM_PGSIZE;
+        PageBlock_t* paddr = allocPhyPages(pagen);
+        return (void*) (page2pa(paddr) + KERNEL_OFFSET);
+    }
+
+    uint32_t index = 0;
+    Bucket_t* bk, * bk_head;
+    BkEntry_t* be;
+
+    index = getBucketSlot(size);
+    if (index < 0) {
+        panic("kmalloc: error size");
+    }
+
+    bk = bk_head = &BucketTable[index];
+    size = bk_head->size;
+
+    while (1) {
+        while (bk != NULL) {
+            if (bk->entry != NULL) {
+                be = bk->entry;
+                bk->entry = be->bke_next;
+                return (void*) be;
+            }
+            bk = bk->next;
+        }
+
+        InitBucketCount++;
+        bk = allocBucket();
+        initBucket(bk, size);
+        bk->next = bk_head->next;
+        bk_head->next = bk;
+    }
+}
+int32_t doKfree(void* vaddr, uint32_t size) {
+    if (size == 0 || vaddr == NULL) {
+        return 0;
+    }
+    if (size >= PMM_PGSIZE) {
+        int pagen = ROUNDUP(size, 4096) / PMM_PGSIZE;
+        freePhyPages(pa2page(vaddr - KERNEL_OFFSET), pagen);
+    }
+
+    uint32_t page_addr;
+    uint32_t index = 0;
+    Bucket_t* bk, * bk_head;
+    BkEntry_t* be;
+
+    index = getBucketSlot(size);
+    if (index < 0) {
+        return -1;
+    }
+
+    //计算vaddr对应的页的首地址
+    //等同于先将vaddr右移12位，再左移12位，清空末尾12位
+    //page_addr = ((uint32_t)vaddr >> 12) << 12;
+    page_addr = page2pa(pa2page(vaddr - KERNEL_OFFSET)) + KERNEL_OFFSET;
+
+    bk = bk_head = &BucketTable[index];
+    size = bk_head->size;
+    be = (BkEntry_t*) vaddr;
+
+    while (bk != NULL) {
+        if (bk->page == page_addr) {
+            be->bke_next = bk->entry;
+            bk->entry = be;
+            return 0;
+        }
+        bk = bk->next;
+    }
+    return -2;
+}
+
+
+
+
+
+
+
+void printAllBucket() {
+    //int i = 0;
+    Bucket_t* bk = &(BucketTable[0]);
+    for (int i = 0;i < 8;i++) {
+        bk = &(BucketTable[i]);
+        printk("%d ", bk->size);
+        for (BkEntry_t* be = bk->entry;be != NULL;be = be->bke_next) {
+            printk(" %08X ", be);
+        }
+        printk("\n");
+    }
+}
+void testKmalloc() {
+    printk("\n");
+    uint32_t free_mem = 0;
+
+    uint32_t free_mem1 = getFreeMem();
+    printk("PMM:FreeMem:%dB, %dKB\n", free_mem1, free_mem1 / 1024);
+
+    uint32_t* p = NULL;
+    for (int i = 0;i < 4;i++) {
+        p = doKmalloc(32);
+        *p = 2147483647;
+        if (*p != 2147483647) {
+            printk("error!\n");
+            printk("p:%08X *p=%u\n", p, *p);
+            break;
+        }
+        printk("p:%08X *p=%d\n", p, *p);
+        //doKfree(p, 32);
+    }
+    printk("\n");
+    doKfree(p, 32);
+    p = doKmalloc(32);
+    *p = 2147483647;
+    if (*p != 2147483647) {
+        printk("error!\n");
+        printk("p:%08X *p=%u\n", p, *p);
+    }
+    printk("p:%08X *p=%d\n", p, *p);
+
+    // printk("\n");
+    // allocPhyPages(1);
+    // for (int i = 0;i < 8;i++) {
+    //     p = doKmalloc(64);
+    //     *p = 2147483647;
+    //     if (*p != 2147483647) {
+    //         printk("error!\n");
+    //         printk("p:%08X *p=%u\n", p, *p);
+    //         break;
+    //     }
+    //     printk("p:%08X *p=%d\n", p, *p);
+
+    // }
+
+
+    // printAllBucket();
+    // printk("InitBucketCount:%d\n", InitBucketCount);
+
+    uint32_t free_mem2 = getFreeMem();
+    printk("PMM:FreeMem:%dB, %dKB\n", free_mem2, free_mem2 / 1024);
+    printk("PMM:used:%dB %dKB\n", free_mem1 - free_mem2, (free_mem1 - free_mem2) / 1024);
+
+
+
+    //while (1) {}
+    printk("\n");
 }

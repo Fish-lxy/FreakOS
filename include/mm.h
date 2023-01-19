@@ -6,9 +6,6 @@ extern uint8_t kern_end[];
 
 #define KERNEL_OFFSET 0xC0000000 //内核起始虚拟地址偏移
 
-#ifndef MMU_H
-#define MMU_H
-
 //global segment number
 #define SEG_KTEXT   1
 #define SEG_KDATA   2
@@ -75,7 +72,5 @@ extern uint8_t kern_end[];
 #define STS_CG32        0xC         // 32-bit Call Gate
 #define STS_IG32        0xE         // 32-bit Interrupt Gate
 #define STS_TG32        0xF         // 32-bit Trap Gate
-
-#endif
 
 #endif
