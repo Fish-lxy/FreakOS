@@ -1,10 +1,10 @@
-#include "ide.h"
-#include "block_dev.h"
-#include "debug.h"
-#include "types.h"
-#include "cpu.h"
+#include <ide.h>
+#include <block_dev.h>
+#include <debug.h>
+#include <types.h>
+#include <cpu.h>
 
-IDEchannel_t channels[2] = {
+IDEchannel_t ide_channels[2] = {
     {IO_BASE0, IO_CTRL0},
     {IO_BASE1, IO_CTRL1},
 };

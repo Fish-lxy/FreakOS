@@ -40,4 +40,6 @@ void pageFault(InterruptFrame_t* regs) {
 
     //todo
     panic("fatal memory error!");
+    while(1){}
+    
 }

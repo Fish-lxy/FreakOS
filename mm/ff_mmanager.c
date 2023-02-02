@@ -3,6 +3,8 @@
 #include "pmmanager.h"
 #include "list.h"
 
+extern FreeList FreeArea;     // 空闲区域链表
+
 PMManager_t ff_PMManager;
 PMManager_t* get_FF_PMManager();
 

@@ -1,5 +1,5 @@
-#ifndef PMMANAGER_H
-#define PMMANAGER_H
+#ifndef __PMMANAGER_H
+#define __PMMANAGER_H
 #include "pmm.h"
 
 typedef struct PMManager_t {

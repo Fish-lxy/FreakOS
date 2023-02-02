@@ -20,9 +20,11 @@ void ELF_FromMultiBoot(MultiBoot_t* mb, ELF_t* out) {
 		if (strcmp(name, ".symtab") == 0) {
 			if (out->symtab <= KERNEL_OFFSET) {
 				out->symtab = (ELF_Symbol_t*) ((uint32_t) sh[i].addr + KERNEL_OFFSET);
+				out->symtabsz = sh[i].size;
 			}
 			else {
 				out->symtab = (ELF_Symbol_t*) sh[i].addr;
+				out->symtabsz = sh[i].size;
 			}
 
 			out->symtabsz = sh[i].size;

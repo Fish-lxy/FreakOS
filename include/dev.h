@@ -1,5 +1,5 @@
-#ifndef _BLOCK_DEV_H
-#define _BLOCK_DEV_H
+#ifndef __BLOCK_DEV_H
+#define __BLOCK_DEV_H
 
 
 

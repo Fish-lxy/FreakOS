@@ -1,5 +1,5 @@
-#ifndef VMM_H
-#define VMM_H
+#ifndef __VMM_H
+#define __VMM_H
 #include "types.h"
 #include "pmm.h"
 #include "idt.h"

@@ -1,5 +1,5 @@
-#ifndef PMM_H
-#define PMM_H
+#ifndef __PMM_H
+#define __PMM_H
 #include "types.h"
 #include "multiboot.h"
 #include "list.h"
@@ -72,6 +72,7 @@ static inline uint32_t page2pa(PageBlock_t* page) {
 }
 //由物理地址计算出该地址属于哪一页
 static inline PageBlock_t* pa2page(uint32_t pa) {
+    //printk("pa:0x%08X pa>>12:%d\n",pa,pa>>12);
     if ((pa >> 12) > PageCount)
         panic("pa is invalid!");
     return &Pages[(pa >> 12)];

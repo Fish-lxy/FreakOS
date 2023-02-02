@@ -1,5 +1,5 @@
-#ifndef ELF_H
-#define ELF_H
+#ifndef __ELF_H
+#define __ELF_H
 
 #include "types.h"
 #include "multiboot.h"

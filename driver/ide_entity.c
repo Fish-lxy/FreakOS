@@ -3,9 +3,10 @@
 #include "debug.h"
 #include "types.h"
 #include "cpu.h"
+#include "kmalloc.h"
 
 extern IDEdevice ide_devices[MAX_IDE];
-extern BlockDev_t blockdevs[MAX_BLOCK_DEV];
+extern BlockDev_t BlockDevs[MAX_BLOCK_DEV];
 
 //IDE0
 int ide0_device_init();
@@ -23,37 +24,40 @@ const char* ide1_get_desc();
 int ide1_ioctl(int op, int flag);
 
 
-void setIde(uint32_t ideno) {
-    BlockDev_t blockdev;
+void setIDE_Data(uint32_t ideno) {
+    BlockDev_t* blockdev = (BlockDev_t*)kmalloc(sizeof(BlockDev_t));
+    if(blockdev == NULL){
+        panic("Can not kmalloc blockdev in setIDE_Data()!");
+    }
     if (ideno == 0) {
-        blockdev.id = ideno;
-        blockdev.name = "IDE 0";
-        blockdev.block_size = SECTSIZE;
-        blockdev.device = &ide_devices[ideno];
-        blockdev.ops.init = ide0_device_init;
-        blockdev.ops.is_vaild = ide0_device_isvaild;
-        blockdev.ops.request = ide0_request;
-        blockdev.ops.ioctl = ide0_ioctl;
-        blockdev.ops.get_desc = ide0_get_desc;
-        blockdev.ops.get_nr_block = ide0_get_nr_block;
+        blockdev->id = ideno;
+        blockdev->name = "IDE 0";
+        blockdev->block_size = SECTSIZE;
+        blockdev->device = &ide_devices[ideno];
+        blockdev->ops.init = ide0_device_init;
+        blockdev->ops.is_vaild = ide0_device_isvaild;
+        blockdev->ops.request = ide0_request;
+        blockdev->ops.ioctl = ide0_ioctl;
+        blockdev->ops.get_desc = ide0_get_desc;
+        blockdev->ops.get_nr_block = ide0_get_nr_block;
 
-        blockdevs[ideno] = blockdev;
+        BlockDevs[ideno] = *blockdev;
     }
     if (ideno == 1) {
-        blockdev.id = ideno;
-        blockdev.name = "IDE 1";
-        blockdev.block_size = SECTSIZE;
-        blockdev.device = &ide_devices[ideno];
-        blockdev.ops.init = ide1_device_init;
-        blockdev.ops.is_vaild = ide1_device_isvaild;
-        blockdev.ops.request = ide1_request;
-        blockdev.ops.ioctl = ide1_ioctl;
-        blockdev.ops.get_desc = ide1_get_desc;
-        blockdev.ops.get_nr_block = ide1_get_nr_block;
+        blockdev->id = ideno;
+        blockdev->name = "IDE 1";
+        blockdev->block_size = SECTSIZE;
+        blockdev->device = &ide_devices[ideno];
+        blockdev->ops.init = ide1_device_init;
+        blockdev->ops.is_vaild = ide1_device_isvaild;
+        blockdev->ops.request = ide1_request;
+        blockdev->ops.ioctl = ide1_ioctl;
+        blockdev->ops.get_desc = ide1_get_desc;
+        blockdev->ops.get_nr_block = ide1_get_nr_block;
 
-        blockdevs[ideno] = blockdev;
+        BlockDevs[ideno] = *blockdev;
     }
-
+    kfree(blockdev,sizeof(BlockDev_t));
 
 }
 

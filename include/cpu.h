@@ -1,5 +1,5 @@
-#ifndef CPU_H
-#define CPU_H
+#ifndef __CPU_H
+#define __CPU_H
 #include "types.h"
 
 // 向端口写一个字节

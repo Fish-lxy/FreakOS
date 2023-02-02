@@ -1,5 +1,5 @@
-#ifndef IO_H
-#define IO_H
+#ifndef __IO_H
+#define __IO_H
 
 #include "types.h"
 

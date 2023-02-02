@@ -1,5 +1,5 @@
-#ifndef MM_H
-#define MM_H
+#ifndef __MM_H
+#define __MM_H
 
 extern uint8_t kern_start[];//由链接器提供内核的起始虚拟地址(/script/kernel.ld)
 extern uint8_t kern_end[];

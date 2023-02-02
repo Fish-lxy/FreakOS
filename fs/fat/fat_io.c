@@ -1,4 +1,4 @@
-#include "diskio.h"
+#include "fat_io.h"
 #include "types.h"
 #include "block_dev.h"
 #include "ide.h"
@@ -7,9 +7,9 @@
 
 IOrequest_t req;
 
-extern BlockDev_t blockdevs[MAX_BLOCK_DEV];
+extern BlockDev_t BlockDevs[MAX_BLOCK_DEV];
 
-extern PARTITION Drives[8];
+extern FAT_PARTITION Drives[8];
 
 static DRESULT _disk_read(BlockDev_t* blockdev, void* buffer, uint32_t secno, uint32_t nsecs) {
     req.io_type = IO_READ;
@@ -26,7 +26,7 @@ DSTATUS disk_status (BYTE dev){
     return 0;
 }
 DRESULT disk_read(BYTE devid, void* buffer, uint32_t secno, uint32_t nsecs) {
-    return _disk_read(&blockdevs[devid], buffer, secno, nsecs);
+    return _disk_read(&BlockDevs[devid], buffer, secno, nsecs);
 
 }
 DSTATUS disk_initialize(BYTE dev) {

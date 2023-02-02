@@ -1,5 +1,5 @@
-#ifndef INTR_SYNC_H
-#define INTR_SYNC_H
+#ifndef __INTR_SYNC_H
+#define __INTR_SYNC_H
 
 #include "types.h"
 #include "cpu.h"

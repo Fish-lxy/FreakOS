@@ -1,5 +1,5 @@
-#ifndef IDT_H
-#define IDT_H
+#ifndef __IDT_H
+#define __IDT_H
 #include"types.h"
 
 //中断描述符
@@ -28,7 +28,7 @@ struct InterruptFrame_t {
     uint32_t es;
     uint32_t ds;        // 用于保存用户的数据段描述符
 
-    //以下寄存器值由pusha压入栈，从 edi 到 eax 由 pusha 指令压入
+    //以下寄存器值由 pusha 指令压入栈，从 edi 到 eax
     uint32_t edi;
     uint32_t esi;
     uint32_t ebp;
@@ -48,7 +48,7 @@ struct InterruptFrame_t {
     // 当发生了特权级的转换，以下寄存器值将被压入
     uint32_t user_esp;
     uint32_t ss;
-    //从这里开始push
+    //从这里开始 push
 } InterruptFrame_t;
 
 // 定义中断处理函数指针

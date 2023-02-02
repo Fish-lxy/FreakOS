@@ -1,5 +1,5 @@
-#ifndef TASK_H
-#define TASK_H
+#ifndef __TASK_H
+#define __TASK_H
 
 #include "types.h"
 #include "pmm.h"
@@ -38,7 +38,7 @@ struct Context_t {
     uint32_t ebp;
 }Context_t;
 
-#define TASK_NAME_LEN 15
+#define TASK_NAME_LEN (31)
 
 typedef struct Task_t Task_t;
 typedef

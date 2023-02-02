@@ -1,5 +1,5 @@
-#ifndef GDT_H
-#define GDT_H
+#ifndef __GDT_H
+#define __GDT_H
 
 #include "types.h"
 #include "mm.h"

@@ -1,5 +1,5 @@
-#ifndef STRING_H
-#define STRING_H
+#ifndef __STRING_H
+#define __STRING_H
 
 #include "types.h"
 

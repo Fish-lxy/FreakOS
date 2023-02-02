@@ -1,5 +1,5 @@
-#ifndef _IDE_H
-#define _IDE_H
+#ifndef __IDE_H
+#define __IDE_H
 
 #include "types.h"
 #include "block_dev.h"
@@ -61,8 +61,8 @@ struct IDEchannel_t {
     uint16_t ctrl;        // Control Base
 } IDEchannel_t;
 
-#define IO_BASE(ideno)          (channels[(ideno) >> 1].base)
-#define IO_CTRL(ideno)          (channels[(ideno) >> 1].ctrl)
+#define IO_BASE(ideno)          (ide_channels[(ideno) >> 1].base)
+#define IO_CTRL(ideno)          (ide_channels[(ideno) >> 1].ctrl)
 
 typedef
 struct IDEdevice {
@@ -84,6 +84,6 @@ int _ide_ioctl(uint32_t ideno,int op, int flag);
 
 
 
-void setIde(uint32_t ideno);
+void setIDE_Data(uint32_t ideno);
 
 #endif

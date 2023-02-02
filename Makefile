@@ -9,9 +9,11 @@ CC = gcc
 LD = ld
 ASM = nasm
 
-C_FLAGS = -c -O0 -std=gnu99 -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-pic -fno-builtin -fno-stack-protector -I include
+C_FLAGS = -c -O0 -std=gnu99 -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-pic -fno-stack-protector -I include
 LD_FLAGS = -T scripts/kernel.ld -m elf_i386 -nostdlib
 ASM_FLAGS = -f elf -g -F stabs
+
+VPATH = ./
 
 all: $(S_OBJECTS) $(C_OBJECTS) link update
 
@@ -42,11 +44,13 @@ update:
 
 .PHONY:mount
 mount:
-	sudo mount disk.img /mnt/kernel
+	sudo losetup /dev/loop1 disk.img -o 1048576
+	sudo mount /dev/loop1 /mnt/kernel
 
 .PHONY:umount
 umount:
 	sudo umount /mnt/kernel
+	sudo losetup -d /dev/loop1
 
 .PHONY:run
 run:
@@ -59,6 +63,6 @@ run2:
 
 .PHONY:debug
 debug:
-	qemu-system-x86_64 -S -s -hda disk.img -boot c &
+	qemu-system-x86_64 -S -s -m 16m -hda disk.img -boot c &
 	sleep 1
-	cgdb -x tools/gdbinit
+	cgdb -x scripts/gdbinit

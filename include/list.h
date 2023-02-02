@@ -1,5 +1,5 @@
-#ifndef LIST_H
-#define LIST_H
+#ifndef __LIST_H
+#define __LIST_H
 //https://github.com/whiteflavour/ucore/blob/master/labcodes/lab2/libs/list.h
 #include "types.h"
 

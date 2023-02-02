@@ -1,9 +1,9 @@
-#ifndef _BLOCK_DEV_H
-#define _BLOCK_DEV_H
+#ifndef __BLOCK_DEV_H
+#define __BLOCK_DEV_H
 
 #include "types.h"
 
-#define MAX_BLOCK_DEV 32
+#define MAX_BLOCK_DEV 16
 
 typedef
 enum IO_Type_e {
@@ -38,6 +38,7 @@ typedef
 struct BlockDev_t {
     int32_t id;
     char* name;
+    bool active;
     uint32_t block_size;
     void* device;
     BlockDev_ops ops;

@@ -1,5 +1,5 @@
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef __TIMER_H
+#define __TIMER_H
 #include "types.h"
 
 uint32_t volatile Timer_SysTick; //系统定时器Tick数

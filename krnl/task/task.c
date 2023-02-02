@@ -34,7 +34,7 @@ int32_t copy_task(Task_t* task, uint32_t esp, InterruptFrame_t* _if);
 void do_exit(int err_code);
 static void forkret(void);
 
-Task_t* current;
+Task_t* CurrentTask;
 Task_t* idle_task;
 Task_t* init_task;
 
@@ -60,7 +60,7 @@ void initTask() {
     setTaskName(idle_task, "idle");
 
     TaskCount++;
-    current = idle_task;
+    CurrentTask = idle_task;
 
     
     int pid = createKernelThread(init_task_func, "Hello, world!", 0);
@@ -151,7 +151,7 @@ int32_t do_fork(uint32_t clone_flags, uint32_t stack, InterruptFrame_t* _if) {
     }
 
     int ret;
-    task->parent = current;
+    task->parent = CurrentTask;
     if (setupNewKstack(task) != 0) {
         ret = ERR_NO_MEM;
         goto failed_and_clean_task;
@@ -187,7 +187,7 @@ failed_out:
 // 根据clone_flag标志复制或共享进程内存管理结构
 int32_t copy_mm(uint32_t clone_flags, Task_t* task) {
     //TODO
-    assert(current->mm == NULL, "mm is not NULL!");
+    assert(CurrentTask->mm == NULL, "mm is not NULL!");
     return 0;
 }
 //设置进程在内核（用户态）正常运行和调度所需的中断帧和执行上下文
@@ -203,16 +203,16 @@ int32_t copy_task(Task_t* task, uint32_t esp, InterruptFrame_t* _if) {
     task->context.esp = (uint32_t) task->_if;
 }
 static void forkret(void) {
-    fork_return_s(current->_if);
+    fork_return_s(CurrentTask->_if);
 }
 //进程终止处理，本函数不能返回
 void do_exit(int err_code) {
-    if(current == idle_task){
+    if(CurrentTask == idle_task){
         panic("Trying to exit idle!");
     }
     //panic("process exit!!.");
-    if (current->mm == NULL) {
-        current->state = TASK_ZOMBIE;
+    if (CurrentTask->mm == NULL) {
+        CurrentTask->state = TASK_ZOMBIE;
         bool flag;
         intr_save(flag);
         {

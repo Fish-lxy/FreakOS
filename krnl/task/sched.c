@@ -15,7 +15,7 @@
 void schedule();
 static void runTask(Task_t* next_task);
 
-extern Task_t* current;
+extern Task_t* CurrentTask;
 extern TaskList_t TaskList; //任务链表首节点
 extern uint32_t TaskCount;
 
@@ -26,7 +26,7 @@ void schedule() {
     Task_t* task = NULL;
     intr_save(intrflag);
     {
-        now = &(current->ptr);
+        now = &(CurrentTask->ptr);
         temp = now;
         while (1) {
             temp = listGetNext(temp);
@@ -51,14 +51,14 @@ void schedule() {
     intr_restore(intrflag);
 }
 void runTask(Task_t* next_task) {
-    if (next_task != current) {
-        Task_t* prev = current;
+    if (next_task != CurrentTask) {
+        Task_t* prev = CurrentTask;
         Task_t* next = next_task;
 
         bool flag;
         intr_save(flag);
         {
-            current = next_task;
+            CurrentTask = next_task;
             load_esp0(next->kstack + KSTACKSIZE);
             lcr3(next->cr3);
             switch_to_s(&(prev->context), &(next->context));

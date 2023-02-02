@@ -1,6 +1,7 @@
-#ifndef KMALLOC_H
-#define KMALLOC_H
+#ifndef __KMALLOC_H
+#define __KMALLOC_H
 
+#include "types.h"
 
 typedef struct BkEntry_t BkEntry_t;
 typedef struct Bucket_t Bucket_t;
