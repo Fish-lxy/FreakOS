@@ -33,4 +33,5 @@ typedef struct FatFs_Inode_t {
 } FatFs_Inode_t;
 
 void detectFatFs();
+void testFatFs();
 #endif

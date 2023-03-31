@@ -30,6 +30,7 @@ void initGDT() {
     //gdtPtr.base = (uint32_t) &gdtEntries;
     gdtPtr.base = (uint32_t) GDT;
 
+    load_esp0((uint32_t)KernelStack);
     TS.ts_esp0 = (uint32_t) KernelStack;
     TS.ts_ss0 = KERNEL_DS;
 

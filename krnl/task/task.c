@@ -3,6 +3,7 @@
 #include "kmalloc.h"
 #include "types.h"
 #include "task.h"
+#include "sched.h"
 #include "pmm.h"
 #include "vmm.h"
 #include "idt.h"
@@ -20,8 +21,8 @@ static Task_t* allocTask();
 static char* setTaskName(Task_t* task, const char* name);
 static char* getTaskName(Task_t* task);
 static uint32_t getNewPid();
-static void wakeupTask(Task_t* task);
 static int32_t setupNewKstack(Task_t* task);
+static void freeKstack(Task_t* task);
 
 void kernel_thread_entry_s();
 void fork_return_s(InterruptFrame_t* _if);
@@ -43,9 +44,10 @@ uint32_t TaskCount;
 
 
 void initTask() {
+
     initList(&(TaskList.ptr));
     // 当前 main 函数的执行流即为系统首个内核进程, 
-    // 在完成各个重要子系统初始化后变为系统空闲进程 idle
+    // 在完成各个子系统初始化后变为系统空闲进程 idle
     // 剩下的初始化工作交给第二个进程 init 
 
     //构造首个进程 idle
@@ -54,21 +56,27 @@ void initTask() {
     if (idle_task == NULL) {
         panic("Can not create idle task!");
     }
-    idle_task->pid = 0;
+    
+    idle_task->tid = 0;
     idle_task->state = TASK_RUNNABLE;
+    idle_task->wait_state = WT_NOTWAIT;
     idle_task->kstack = KernelStack;
+    idle_task->need_resched = 1;
     setTaskName(idle_task, "idle");
-
+    
     TaskCount++;
     CurrentTask = idle_task;
 
     
+
+
+
     int pid = createKernelThread(init_task_func, "Hello, world!", 0);
-    
+
     if (pid < 0) {
         panic("create init process failed.");
     }
-    int pid2 = createKernelThread(test_task, "Hello, world!", 0);
+    // int pid2 = createKernelThread(test_task, "Hello, world!", 0);
     //printk("%d\n", TaskCount);;
 
 }
@@ -80,7 +88,10 @@ Task_t* allocTask() {
     }
     if (task != NULL) {
         task->state = TASK_UNINIT;
-        task->pid = -1;
+        task->wait_state = WT_NOTWAIT;
+        task->time_slice = 0;
+        task->need_resched = 0;
+        task->tid = -1;
         task->runs = 0;
         task->kstack = 0;
         task->parent = NULL;
@@ -95,6 +106,7 @@ Task_t* allocTask() {
     }
 
 }
+//申请内核栈，TSS段将使用
 static int32_t setupNewKstack(Task_t* task) {
     uint32_t stack = (uint32_t) kmalloc(KSTACKSIZE);
     if (stack != NULL) {
@@ -102,6 +114,9 @@ static int32_t setupNewKstack(Task_t* task) {
         return 0;
     }
     return ERR_NO_MEM;
+}
+static void freeKstack(Task_t* task){
+    kfree(task->kstack,KSTACKSIZE);
 }
 char* setTaskName(Task_t* task, const char* name) {
     memset(task->name, 0, sizeof(task->name));
@@ -112,9 +127,7 @@ char* getTaskName(Task_t* task) {
     memset(name, 0, sizeof(name));
     return memcpy(name, task->name, TASK_NAME_LEN);
 }
-void wakeupTask(Task_t* task) {
-    task->state = TASK_RUNNABLE;
-}
+
 uint32_t getNewPid() {
     static uint32_t newestPid = 0;
 
@@ -135,7 +148,7 @@ int32_t createKernelThread(int (*func)(void*), void* arg, uint32_t clone_flags) 
     interruptFrame.ebx = (uint32_t) func;
     interruptFrame.edx = (uint32_t) arg;
     interruptFrame.eip = (uint32_t) kernel_thread_entry_s;
-    //printk("Stage11\n");
+
     return do_fork(clone_flags | CLONE_VM, 0, &interruptFrame);
 }
 //创建一个子进程所需的数据结构
@@ -165,8 +178,8 @@ int32_t do_fork(uint32_t clone_flags, uint32_t stack, InterruptFrame_t* _if) {
     bool flag;
     intr_save(flag);
     {
-        task->pid = getNewPid();
-        ret = task->pid;
+        task->tid = getNewPid();
+        ret = task->tid;
         listAdd(&TaskList.ptr, &(task->ptr));
         TaskCount++;
     }
@@ -198,7 +211,7 @@ int32_t copy_task(Task_t* task, uint32_t esp, InterruptFrame_t* _if) {
     *(task->_if) = *_if;
     task->_if->eax = 0;
     task->_if->esp = esp;
-    SetBitOne(&(task->_if->eflags), 9);//打开中断
+    SetBit(&(task->_if->eflags), 9);//打开中断
     task->context.eip = forkret;
     task->context.esp = (uint32_t) task->_if;
 }
@@ -211,7 +224,7 @@ void do_exit(int err_code) {
         panic("Trying to exit idle!");
     }
     //panic("process exit!!.");
-    if (CurrentTask->mm == NULL) {
+    if (CurrentTask->mm == NULL) {//是内核进程
         CurrentTask->state = TASK_ZOMBIE;
         bool flag;
         intr_save(flag);
@@ -221,6 +234,7 @@ void do_exit(int err_code) {
         intr_restore(flag);
         
     }
+    //TODO 用户态进程退出
 
     schedule();
     panic("do_exit will not return!");

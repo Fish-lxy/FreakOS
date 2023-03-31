@@ -1,22 +1,26 @@
 #include "timer.h"
-#include "types.h"
-#include "idt.h"
 #include "cpu.h"
-#include "task.h"
 #include "debug.h"
+#include "idt.h"
+#include "sched.h"
+#include "task.h"
+#include "types.h"
 
 #define FREQUENCY 100
 
 void timerCallBack() {
     Timer_SysTick++;
-    if(Timer_SysTick % FREQUENCY == 0){
+    if (Timer_SysTick % FREQUENCY == 0) {
         Timer_SysSecond++;
-        //printk("Time: %d\n",Timer_SysSecond);
+        // printk("Time: %d\n",Timer_SysSecond);
     }
-    schedule();
+    tickCurrentTask();
+    if (CurrentTask->need_resched == 1) {
+        schedule();
+    }
 }
 void initTimer() {
-    //consoleWriteColor("Init Timer...", TC_black, TC_light_blue);
+    // consoleWriteColor("Init Timer...", TC_black, TC_light_blue);
     interruptHandlerRegister(IRQ0, timerCallBack);
     // Intel 8253/8254 PIT芯片 I/O端口地址范围是40h~43h
     // 输入频率为 1193180，FREQUENCY 即每秒中断次数
@@ -29,11 +33,11 @@ void initTimer() {
     outb(0x43, 0x36);
 
     // 拆分低字节和高字节
-    uint8_t low = (uint8_t) (divisor & 0xFF);
-    uint8_t high = (uint8_t) ((divisor >> 8) & 0xFF);
+    uint8_t low = (uint8_t)(divisor & 0xFF);
+    uint8_t high = (uint8_t)((divisor >> 8) & 0xFF);
 
     // 分别写入低字节和高字节
     outb(0x40, low);
     outb(0x40, high);
-    //consoleWriteColor("OK\n", TC_black, TC_yellow);
+    // consoleWriteColor("OK\n", TC_black, TC_yellow);
 }

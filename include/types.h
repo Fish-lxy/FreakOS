@@ -51,11 +51,11 @@ static inline uint32_t GetBit(uint32_t num, uint32_t pos) {
     return (num >> pos) & 1;
 }
 //将无符号数 num 中第 pos 位置 1 (从第 0 位开始)
-static inline void SetBitOne(uint32_t *num, uint32_t pos){
+static inline void SetBit(uint32_t *num, uint32_t pos){
     (*num) = (*num) | (1 << (pos));  
 }
 //将无符号数 num 中第 pos 位置 0 (从第 0 位开始)
-static inline void SetBitZero(uint32_t *num, uint32_t pos){  
+static inline void ClearBit(uint32_t *num, uint32_t pos){  
     (*num) = (*num) & ~(1 << (pos));  
 }
 

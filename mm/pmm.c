@@ -67,11 +67,11 @@ void pagesInit() {
     Pages = (PageBlock_t *)ROUNDUP((void *)end, PMM_PGSIZE);
 
     PageCount = PhyMemSize / PMM_PGSIZE;
-   
+
     // 先将所有页都设定为保留
     for (uint32_t i = 0; i < PageCount; i++) {
         Pages[i].flags = 0;
-        SetBitOne(&(Pages[i].flags), PGP_reserved);
+        SetBit(&(Pages[i].flags), PGP_reserved);
     }
     // 空闲内存起始于Pages数组结束后新的一页
     FreeMemStart =
@@ -85,19 +85,28 @@ PageBlock_t *allocPhyPages(size_t n) { return Manager.alloc_pages(n); }
 void freePhyPages(PageBlock_t *base, size_t n) { Manager.free_pages(base, n); }
 
 uint32_t getFreeMem() {
-    list_ptr_t *lp = &(FreeArea.ptr);
-    PageBlock_t *p;
+    
     uint32_t free_pageblocks = 0;
     uint32_t free_membytes = 0;
-    int i = 0;
-    do {
-        i++;
+    
+    // while (lp != &(FreeArea.ptr)) {
+        
+    //     lp = listGetNext(lp);
+    // }
+
+    int ii = 0;
+    PageBlock_t *p;
+    list_ptr_t *free_block_list = &(FreeArea.ptr);
+    list_ptr_t *i = NULL;
+    listForEach(i,free_block_list){
+        ii++;
         // p指向第一个Pages块
-        p = lp2page(lp, ptr);
+        p = lp2page(i, ptr);
         free_pageblocks += p->property;
-        free_membytes += (free_pageblocks * PMM_PGSIZE);
-        lp = listGetNext(lp);
-    } while (lp != &(FreeArea.ptr));
+        
+    }
+    free_membytes = free_pageblocks * PMM_PGSIZE;
+
     printk(" i:%d ", i);
     return free_membytes;
 }

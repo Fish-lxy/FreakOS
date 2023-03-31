@@ -18,15 +18,15 @@ VPATH = ./
 all: $(S_OBJECTS) $(C_OBJECTS) link update
 
 .c.o:
-	@echo 编译 $< ...
+	@echo Complie $< ...
 	$(CC) $(C_FLAGS) $< -o $@
 
 .s.o:
-	@echo 编译 $< ...
+	@echo Complie $< ...
 	$(ASM) $(ASM_FLAGS) $<
 
 link:
-	@echo 链接内核...
+	@echo Link...
 	$(LD) $(LD_FLAGS) $(S_OBJECTS) $(C_OBJECTS) -o kernel
 
 .PHONY:clean
@@ -54,15 +54,15 @@ umount:
 
 .PHONY:run
 run:
-	qemu-system-x86_64 -m 16m -hda disk.img -boot c
+	qemu-system-x86_64 -m 32m -hda disk.img -boot c
 
 .PHONY:run2
 run2:
-	qemu-system-x86_64 -m 16m -hda disk.img -hdb disk2.img -boot c
+	qemu-system-x86_64 -m 32m -hda disk.img -hdb disk2.img -boot c
 
 
 .PHONY:debug
 debug:
-	qemu-system-x86_64 -S -s -m 16m -hda disk.img -boot c &
+	qemu-system-x86_64 -S -s -m 32m -hda disk.img -boot c &
 	sleep 1
 	cgdb -x scripts/gdbinit

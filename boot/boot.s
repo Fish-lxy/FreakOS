@@ -4,6 +4,14 @@
 ;		  https://blog.csdn.net/weixin_45206746/article/details/113065721
 ; ----------------------------------------------------------------
 
+; 符合Multiboot规范的 OS 映象需要这样一个 Multiboot 头
+; Multiboot 头的分布必须如下表所示：
+; 偏移量  类型  域名        备注
+;   0     u32   magic       必需
+;   4     u32   flags       必需 
+;   8     u32   checksum    必需 
+
+
 MBOOT_HEADER_MAGIC 	equ 	0x1BADB002 	; Multiboot 魔数，由规范决定
 
 MBOOT_PAGE_ALIGN 	equ 	1 << 0    	; 0 号位表示所有的引导模块将按页(4KB)边界对齐
@@ -15,14 +23,7 @@ MBOOT_HEADER_FLAGS 	equ 	MBOOT_PAGE_ALIGN | MBOOT_MEM_INFO
 ; 域checksum是一个32位的无符号值，要求 magic + flags + checksum = 0
 MBOOT_CHECKSUM 		equ 	- (MBOOT_HEADER_MAGIC + MBOOT_HEADER_FLAGS)
 
-; 符合Multiboot规范的 OS 映象需要这样一个 Multiboot 头
-; Multiboot 头的分布必须如下表所示：
-; ----------------------------------------------------------
-; 偏移量  类型  域名        备注
-;   0     u32   magic       必需
-;   4     u32   flags       必需 
-;   8     u32   checksum    必需 
-;-----------------------------------------------------------
+
 
 [BITS 32]  	; 所有代码以 32-bit 的方式编译
 section .temp.text 	; 代码段从这里开始
@@ -48,10 +49,11 @@ stop:
 	hlt 			 ; 停机
 	jmp stop 		 ; 到这里结束
 
+
 section .temp.data 	 ; 未初始化的数据段从这里开始
 stack:
 	resb 1024 	 	 ; 这里作为临时内核栈
 TempMbootPtr: 		 ; 临时的 multiboot 结构体指针
 	resb 4
 
-STACK_TOP equ $-stack-1 	 ; 内核栈顶，$指当前地址
+STACK_TOP equ $-stack-1 	 ; 内核栈顶，$为当前地址

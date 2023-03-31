@@ -1,6 +1,8 @@
 #include "debug.h"
 #include "gdt.h"
+#include "ide.h"
 #include "idt.h"
+#include "kbd.h"
 #include "list.h"
 #include "pmm.h"
 #include "string.h"
@@ -8,10 +10,27 @@
 #include "types.h"
 #include "vmm.h"
 
-#include "fat.h"
 #include "fat_fs.h"
-#include "ide.h"
 #include "partiton.h"
+
+void testA() {
+    int i = 0;
+    while (1) {
+        if (i % 1000000 == 0) {
+            printk("A");
+        }
+        i++;
+    }
+}
+void testB() {
+    int i = 0;
+    while (1) {
+        if (i % 1000000 == 0) {
+            printk("B");
+        }
+        i++;
+    }
+}
 
 bool flag = TRUE;
 extern BlockDev_t MainBlockdev;
@@ -20,16 +39,15 @@ int init_task_func(void *arg) {
     // init进程将会接手 main 函数的工作，继续内核的初始化
     printk("Start init process:\n");
     initBlockdev();
-    initPartitionTable();
+    initPartitionTable(); // 从MBR中读取并初始化磁盘分区表信息
 
-    testFAT();
+    testFatFs();
+    initKBD();
 
-    printk("FatFs:\n");
-    //testKmalloc();
-    detectFatFs();
+    createKernelThread(testA, NULL, 0);
+    createKernelThread(testB, NULL, 0);
 
-
-
+    testRunQueue();
 
     // printk("Msg: %s\n", (const char*) arg);
 
@@ -44,8 +62,8 @@ int init_task_func(void *arg) {
     // }
     printk("OK.\n");
 
-    while (1){
-        
+    while (1) {
+        asm("hlt");
     }
 }
 // 测试进程

@@ -2,6 +2,19 @@
 #define __IDT_H
 #include"types.h"
 
+#define IRQ0 32
+#define IRQ_SLAVE 2
+
+#define PIC1 0x20
+#define PIC2 0xA0
+
+#define PIC1_CMD PIC1
+#define PIC2_CMD PIC2
+#define PIC1_DATA (PIC1+1)
+#define PIC2_DATA (PIC2+1)
+
+#define PIC_EOI 0x20
+
 //中断描述符
 typedef
 struct IDT_Entry_t {
@@ -115,6 +128,8 @@ void isr170(); //0xAA
 
 // 调用IRQ中断服务程序，汇编中调用
 void IRQ_handlerCall(InterruptFrame_t* pr);
+
+void enableIRQ(uint8_t irq);
 
 // 定义IRQ
 #define  IRQ0     32    // 系统计时器

@@ -50,7 +50,7 @@ f_lseek is removed in addition to level 2. */
 #define _MULTI_PARTITION 1
 /* When _MULTI_PARTITION is set to 0, each logical drive is bound to same
 /  physical drive number and can mount only 1st primaly partition. When it is
-/  set to 1, each logical drive can mount a partition listed in Drives[]. */
+/  set to 1, each logical drive can mount a partition listed in Fat_Drives[]. */
 
 #define _USE_FSINFO 1
 /* To enable FSInfo support on FAT32 volume, set _USE_FSINFO to 1. */
@@ -151,9 +151,9 @@ typedef struct _PARTITION {
     BYTE pt; /* Partition # (0-3) */
 } FAT_PARTITION;
 extern FAT_PARTITION
-    Drives[]; /* Logical drive# to physical location conversion table */
-#define LD2PD(drv) (Drives[drv].pd) /* Get physical drive# */
-#define LD2PT(drv) (Drives[drv].pt) /* Get partition# */
+    Fat_Drives[]; /* Logical drive# to physical location conversion table */
+#define LD2PD(drv) (Fat_Drives[drv].pd) /* Get physical drive# */
+#define LD2PT(drv) (Fat_Drives[drv].pt) /* Get partition# */
 
 #else /* Single partition cfg */
 

@@ -2,14 +2,14 @@
 #include "types.h"
 #include "block_dev.h"
 #include "ide.h"
-#include "fat.h"
+#include "fat_base.h"
 #include "fat_integer.h"
 
-IOrequest_t req;
+static IOrequest_t req;
 
 extern BlockDev_t BlockDevs[MAX_BLOCK_DEV];
 
-extern FAT_PARTITION Drives[8];
+extern FAT_PARTITION Fat_Drives[8];
 
 static DRESULT _disk_read(BlockDev_t* blockdev, void* buffer, uint32_t secno, uint32_t nsecs) {
     req.io_type = IO_READ;
@@ -22,6 +22,8 @@ static DRESULT _disk_read(BlockDev_t* blockdev, void* buffer, uint32_t secno, ui
     }
     return RES_OK;
 }
+
+
 DSTATUS disk_status (BYTE dev){
     return 0;
 }

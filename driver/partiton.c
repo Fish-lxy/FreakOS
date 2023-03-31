@@ -1,7 +1,6 @@
 #include "partiton.h"
 #include "block_dev.h"
 #include "debug.h"
-#include "fat.h"
 #include "kmalloc.h"
 #include "list.h"
 #include "string.h"
@@ -9,7 +8,6 @@
 
 extern BlockDev_t BlockDevs[MAX_BLOCK_DEV];
 extern BlockDev_t MainBlockdev;
-extern FAT_PARTITION Drives[8]; // fat.h
 
 MBR_Device_t *MBR_DeviceList;
 MBR_DiskInfo_t *MBR_Temp;
@@ -44,46 +42,14 @@ void initPartitionTable() {
                 md_temp->dev = &BlockDevs[i];
                 memcpy(&(md_temp->mbr_diskinfo), MBR_Temp,
                        sizeof(MBR_DiskInfo_t));
-
-                //插入MBR_Device链表中
-                if (i == 0) {
-                    MBR_DeviceList->devid = md_temp->devid;
-                    MBR_DeviceList->dev = md_temp->dev;
-                    memcpy(&(MBR_DeviceList->mbr_diskinfo),
-                           &(md_temp->mbr_diskinfo), sizeof(MBR_DiskInfo_t));
-                } else {
-                    listAdd(&(MBR_DeviceList->list_ptr), &(md_temp->list_ptr));
-                }
-
                 MBR_Count++;
+
+                listAdd(&(MBR_DeviceList->list_ptr), &(md_temp->list_ptr));
+                
             }
-            // printk("55:%X AA:%X\n", mbr_temp->magic_55, mbr_temp->magic_AA);
         }
     }
     printPartitionInfo();
-
-    // list_ptr_t *lp = &(MBR_DeviceList->list_ptr);
-    // MBR_Device_t *md = lp2MBR_Device(lp, list_ptr);
-    // int ii = 0;
-    // do {
-    //     ii++;
-    //     md = lp2MBR_Device(lp, list_ptr);
-    //     printk("ii:%d devid:%d dev:0x%08X 55:%X AA:%X\n", ii, md->devid,
-    //            (uint32_t)md->dev, md->mbr_diskinfo.magic_55,
-    //            md->mbr_diskinfo.magic_AA);
-    //     printk("dev:0x%08X\n", &BlockDevs[md->devid]);
-    //     lp = listGetNext(lp);
-    // } while (lp != &(MBR_DeviceList->list_ptr));
-
-    // printk("mbrcount:%d\n", MBR_Count);
-
-    
-    // for (int i = 0; i < MBR_PARTITION_COUNT; i++) {
-    //     if (mbr_temp->partinfo[i].partition_type != 0) {
-    //         Drives[i].pd = 0;
-    //         Drives[i].pd = i;
-    //     }
-    // }
 }
 
 static MBR_DiskInfo_t *readMBR_Info(BlockDev_t *blockdev) {
@@ -96,19 +62,20 @@ static MBR_DiskInfo_t *readMBR_Info(BlockDev_t *blockdev) {
 
 int printPartitionInfo() {
     list_ptr_t *lp = &(MBR_DeviceList->list_ptr);
+    list_ptr_t *listi = NULL;
     MBR_Device_t *md = NULL;
     PartitionDiskInfo_t *pdi = NULL;
-    printk("\nPartition Info:\n");
+    printk("Partition Info:\n");
 
-    do {
-        md = lp2MBR_Device(lp, list_ptr);
+    listForEach(listi,lp){
+        md = lp2MBR_Device(listi, list_ptr);
         pdi = md->mbr_diskinfo.partinfo;
         for (int i = 0; i < MBR_PARTITION_COUNT; ++i) {
             char *active = NULL;
             if (pdi[i].active == 0x80) {
-                active = "true";
+                active = "0x80 true";
             } else if (pdi[i].active == 0x00) {
-                active = "false";
+                active = "0x00 false";
             } else {
                 active = "unknown";
             }
@@ -125,8 +92,7 @@ int printPartitionInfo() {
                 printk("Count: %05u\n", pdi[i].nsectors);
             }
         }
-        lp = listGetNext(lp);
-    } while (lp != &(MBR_DeviceList->list_ptr));
+    }
 }
 const char *getPartType(int type) {
     if (type == 0x00) {

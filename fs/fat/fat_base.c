@@ -52,9 +52,8 @@
 /---------------------------------------------------------------------------*/
 // FAT文件系统底层驱动
 
-
-#include "fat_io.h" /* Include file for user provided disk functions */
-#include "fat.h"    /* FatFs declarations */
+#include "fat_base.h" /* Fat declarations */
+#include "fat_io.h"   /* Include file for user provided disk functions */
 #include "string.h"
 
 #include "debug.h"
@@ -65,12 +64,11 @@ static BYTE check_fs(FATFS_SuperBlock *fs, DWORD sect);
 static FRESULT auto_mount(const char **path, FATFS_SuperBlock **rfs,
                           BYTE chk_wp);
 FATFS_SuperBlock *
-    FatFs_sb[_DRIVES]; /* Pointer to the file system objects (logical drives) */
+    Fat_SuperBlock[_DRIVES]; /* Pointer to the file system objects (logical drives) */
 static WORD fsid;      /* File system mount ID */
-FAT_PARTITION Drives[8];
+FAT_PARTITION Fat_Drives[8];
 
 /****************************************************************************/
-
 
 FRESULT fat_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs) {
 
@@ -81,7 +79,6 @@ FRESULT fat_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs) {
         bootsect = fatfs->boot_sector;
         _path[0] = '0' + fatfs->fid;
     }
-    
 
     char **path = &mount_path;
 
@@ -110,7 +107,7 @@ FRESULT fat_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs) {
     if (part >= _DRIVES)
         return FR_INVALID_DRIVE; /* Is the drive number valid? */
 
-    *rfs = fs = FatFs_sb[part]; /* Returen pointer to the corresponding file
+    *rfs = fs = Fat_SuperBlock[part]; /* Returen pointer to the corresponding file
                                system object */
 
     if (!fs)
@@ -240,7 +237,7 @@ FRESULT fat_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs) {
 int testFAT() {
     printk("\n");
 
-    //FatFs_sb[0] = kmalloc(sizeof(FATFS_SuperBlock) * _DRIVES);
+    // Fat_SuperBlock[0] = kmalloc(sizeof(FATFS_SuperBlock) * _DRIVES);
     FATFS_SuperBlock *fs;
     char *d = "0:/";
     int i = auto_mount(&d, &fs, 0);
@@ -273,7 +270,7 @@ int testFAT() {
 
     ls("0:/");
 
-    // showFAT(FatFs_sb[0]);
+    // showFAT(Fat_SuperBlock[0]);
 }
 FRESULT ls(const char *path) {
     FRESULT result;
@@ -365,7 +362,7 @@ move_window(                      /* TRUE: successful, FALSE: failed */
 /*-----------------------------------------------------------------------*/
 
 #if !_FS_READONLY
-static FRESULT sync(          /* FR_OK: successful, FR_RW_ERROR: failed */
+static FRESULT sync(/* FR_OK: successful, FR_RW_ERROR: failed */
                     FATFS_SuperBlock *fs /* File system object */
 ) {
     fs->winflag = 1;
@@ -938,7 +935,7 @@ auto_mount(/* FR_OK(0): successful, !=0: any error occured */
     /* Check if the drive number is valid or not */
     if (drv >= _DRIVES)
         return FR_INVALID_DRIVE; /* Is the drive number valid? */
-    *rfs = fs = FatFs_sb[drv];   /* Returen pointer to the corresponding file
+    *rfs = fs = Fat_SuperBlock[drv];   /* Returen pointer to the corresponding file
                                  system   object */
 
     if (!fs)
@@ -1095,10 +1092,10 @@ f_mount(BYTE drv, /* Logical drive number to be mounted/unmounted */
     if (drv >= _DRIVES)
         return FR_INVALID_DRIVE;
 
-    if (FatFs_sb[drv])
-        FatFs_sb[drv]->fs_type = 0; /* Clear old object */
+    if (Fat_SuperBlock[drv])
+        Fat_SuperBlock[drv]->fs_type = 0; /* Clear old object */
 
-    FatFs_sb[drv] = fs; /* Register and clear new object */
+    Fat_SuperBlock[drv] = fs; /* Register and clear new object */
     if (fs)
         fs->fs_type = 0;
 
