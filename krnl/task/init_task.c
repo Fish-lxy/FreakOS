@@ -5,6 +5,7 @@
 #include "kbd.h"
 #include "list.h"
 #include "pmm.h"
+#include "sem.h"
 #include "string.h"
 #include "task.h"
 #include "types.h"
@@ -13,30 +14,55 @@
 #include "fat_fs.h"
 #include "partiton.h"
 
+volatile uint32_t sum = 0;
+Semaphore_t sem;
 void testA() {
     int i = 0;
-    while (1) {
-        if (i % 1000000 == 0) {
-            printk("A");
-        }
-        i++;
-    }
+    // while (1) {
+    //     if (i % 25000000 == 0) {
+    //         printk("A");
+    //     }
+    //     i++;
+    // }
+
+    // for(int i=0;i<200;i++){
+    //     sum++;
+    //     printk(" A:%d\n",sum);
+
+    // }
+    // printk("A:%d\n",sum);
+
+    initSem(&sem, 0);
+
+    acquireSem(&sem);
+    printk("second\n");
+
 }
 void testB() {
     int i = 0;
-    while (1) {
-        if (i % 1000000 == 0) {
-            printk("B");
-        }
-        i++;
-    }
+    // while (1) {
+    //     if (i % 25000000 == 0) {
+    //         printk("B");
+    //     }
+    //     i++;
+    // }
+
+    // for(int i=0;i<200;i++){
+    //     sum++;
+    //     printk(" B:%d\n",sum);
+
+    // }
+    // printk("B:%d\n",sum);
+
+    printk("first\n");
+    releaseSem(&sem);
 }
 
-bool flag = TRUE;
-extern BlockDev_t MainBlockdev;
+
 // 系统的第二个进程 init
 int init_task_func(void *arg) {
-    // init进程将会接手 main 函数的工作，继续内核的初始化
+    // init内核进程将会接手 main 函数的工作，继续内核的初始化
+    sprintk("init进程开始：\n");
     printk("Start init process:\n");
     initBlockdev();
     initPartitionTable(); // 从MBR中读取并初始化磁盘分区表信息
@@ -47,7 +73,7 @@ int init_task_func(void *arg) {
     createKernelThread(testA, NULL, 0);
     createKernelThread(testB, NULL, 0);
 
-    testRunQueue();
+    //testRunQueue();
 
     // printk("Msg: %s\n", (const char*) arg);
 
@@ -65,25 +91,4 @@ int init_task_func(void *arg) {
     while (1) {
         asm("hlt");
     }
-}
-// 测试进程
-int test_task(void *arg) {
-    // printk("test process:\n");
-    // printk("B\n");
-    // flag = TRUE;
-
-    // printk("To U: %s\n", (const char*) arg);
-
-    // int i = 0;
-    // while (1) {
-
-    //     if (i % 1000000 == 0) {
-    //         printk("B");
-    //         i = 0;
-    //     }
-    //     i++;
-    // }
-    while (1)
-        ;
-    return 0;
 }

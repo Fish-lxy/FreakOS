@@ -181,6 +181,7 @@ void interruptHandlerRegister(uint8_t n, InterruptHandler_t h) {
 
 //
 void enableIRQ(uint8_t irq){//irq为IRQ号，从0开始
+    irq = irq - IRQ_OFFSET;
     uint16_t irq_mask = (inb(PIC2 + 1) << 8) + inb(PIC1 + 1);
     irq_mask &= ~(1 << irq);
     outb(PIC1 + 1, irq_mask);

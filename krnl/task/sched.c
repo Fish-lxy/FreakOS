@@ -16,11 +16,6 @@
 void schedule();
 static void runTask(Task_t *next_task);
 
-extern Task_t *idle_task;
-extern Task_t *CurrentTask;
-extern TaskList_t TaskList; // 任务链表首节点
-extern uint32_t TaskCount;
-
 static RunQueue_t RunQueue;
 
 void initRunQueue();
@@ -63,27 +58,34 @@ void schedule() {
     // }
     // intr_restore(nintrflag);
 
+    // 时间片轮转RR
     bool intr_flag;
     Task_t *next;
     bool intrflag;
     intr_save(intrflag);
     {
+        //sprintk("开始调度:\n");
+
         CurrentTask->need_resched = 0;
         if (CurrentTask->state == TASK_RUNNABLE) {
-            //if (CurrentTask != idle_task) {
+            if (CurrentTask != idle_task) {
                 enqueueRunQueue(&RunQueue, CurrentTask);
-            //}
+                //sprintk(" 当前进程%d入队\n", CurrentTask->tid);
+            }
         }
         if ((next = getHeadRunQueue(&RunQueue)) != NULL) {
             dequeueRunQueue(&RunQueue, next);
+            //sprintk(" 进程%d出队\n", CurrentTask->tid);
         }
         if (next == NULL) {
             next = idle_task;
         }
         if (next != CurrentTask) {
-            
+            //sprintk("选择的进程:%d\n", next->tid);
             runTask(next);
         }
+
+        //sprintk("调度结束\n");
     }
     intr_restore(intrflag);
     // printk("next%d ",next->tid);
@@ -109,7 +111,7 @@ void runTask(Task_t *next_task) {
 //----------------------------------------------------------------------------------------------
 
 void initRunQueue() {
-    RunQueue.max_time_slice = 5;
+    RunQueue.max_time_slice = MAX_TIME_SLICES;
     RunQueue.task_num = 0;
     initList(&(RunQueue.run_list));
 }
@@ -123,7 +125,7 @@ void enqueueRunQueue(RunQueue_t *rq, Task_t *task) {
     //}
 
     // 如果进程在当前的执行时间片已经用完
-    if (task->time_slice == 0 || task->time_slice > rq->max_time_slice) {
+    if (task->time_slice <= 0 || task->time_slice > rq->max_time_slice) {
         task->time_slice = rq->max_time_slice;
     }
     rq->task_num++;
@@ -147,14 +149,14 @@ Task_t *getHeadRunQueue(RunQueue_t *rq) {
 void tickTask(RunQueue_t *rq, Task_t *task) {
     if (task->time_slice > 0) {
         task->time_slice--;
+        // sprintk("当前进程 %d:剩余时间片:%d\n", task->tid, task->time_slice);
     }
     if (task->time_slice == 0) {
         task->need_resched = 1;
+        // sprintk("当前进程 %d 时间片耗尽\n", task->tid);
     }
 }
-void tickCurrentTask(){
-    tickTask(&RunQueue,CurrentTask);
-}
+void tickCurrentTask() { tickTask(&RunQueue, CurrentTask); }
 //----------------------------------------------------------------------------------------------
 
 void wakeupTask(Task_t *task) {

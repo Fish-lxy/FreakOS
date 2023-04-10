@@ -1,17 +1,16 @@
 #include "fat_io.h"
 #include "types.h"
-#include "block_dev.h"
+#include "dev.h"
 #include "ide.h"
 #include "fat_base.h"
 #include "fat_integer.h"
 
-static IOrequest_t req;
+extern Device_t *getDeviceWithDevid(uint32_t devid);//dev.c
 
-extern BlockDev_t BlockDevs[MAX_BLOCK_DEV];
+extern FATBASE_Partition Fat_Drives[8];
 
-extern FAT_PARTITION Fat_Drives[8];
-
-static DRESULT _disk_read(BlockDev_t* blockdev, void* buffer, uint32_t secno, uint32_t nsecs) {
+static DRESULT _disk_read(Device_t* blockdev, void* buffer, uint32_t secno, uint32_t nsecs) {
+    IOrequest_t req;
     req.io_type = IO_READ;
     req.secno = secno;
     req.nsecs = nsecs;
@@ -28,7 +27,8 @@ DSTATUS disk_status (BYTE dev){
     return 0;
 }
 DRESULT disk_read(BYTE devid, void* buffer, uint32_t secno, uint32_t nsecs) {
-    return _disk_read(&BlockDevs[devid], buffer, secno, nsecs);
+    Device_t *dev = getDeviceWithDevid(devid);
+    return _disk_read(dev, buffer, secno, nsecs);
 
 }
 DSTATUS disk_initialize(BYTE dev) {

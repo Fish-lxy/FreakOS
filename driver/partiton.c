@@ -1,19 +1,18 @@
 #include "partiton.h"
-#include "block_dev.h"
+#include "dev.h"
 #include "debug.h"
 #include "kmalloc.h"
 #include "list.h"
 #include "string.h"
 #include "types.h"
 
-extern BlockDev_t BlockDevs[MAX_BLOCK_DEV];
-extern BlockDev_t MainBlockdev;
+extern Device_t* DeviceList;
 
 MBR_Device_t *MBR_DeviceList;
 MBR_DiskInfo_t *MBR_Temp;
 uint32_t MBR_Count = 0;
 
-static MBR_DiskInfo_t *readMBR_Info(BlockDev_t *blockdev);
+static MBR_DiskInfo_t *readMBR_Info(Device_t *blockdev);
 
 // 从MBR中读取并初始化磁盘分区表信息
 void initPartitionTable() {
@@ -28,18 +27,19 @@ void initPartitionTable() {
     MBR_Device_t *md_temp = NULL;
 
     initList(&(MBR_DeviceList->list_ptr));
-    list_ptr_t *next = &(MBR_DeviceList->list_ptr);
 
-    for (int i = 0; i < MAX_BLOCK_DEV; i++) {
-        if (BlockDevs[i].active == TRUE) {
-            MBR_Temp = readMBR_Info(&BlockDevs[i]);
+    list_ptr_t *listi = NULL;
+    listForEach(listi, &(DeviceList->list_ptr)) {
+        Device_t *dev = lp2dev(listi, list_ptr);
+        if(dev->active == TRUE && dev->type == BlockDevice){
+            MBR_Temp = readMBR_Info(dev);
             // 检验是否MBR有效标志
             if (MBR_Temp->magic_55 == 0x55 && MBR_Temp->magic_AA == 0xAA) {
                 //构造MBR_Device数据
                 md_temp = kmalloc(sizeof(MBR_Device_t));
                 memset(md_temp, 0, sizeof(MBR_Device_t));
-                md_temp->devid = i;
-                md_temp->dev = &BlockDevs[i];
+                md_temp->devid = dev->id;
+                md_temp->dev = dev;
                 memcpy(&(md_temp->mbr_diskinfo), MBR_Temp,
                        sizeof(MBR_DiskInfo_t));
                 MBR_Count++;
@@ -49,10 +49,30 @@ void initPartitionTable() {
             }
         }
     }
+
+    // for (int i = 0; i < MAX_BLOCK_DEV; i++) {
+    //     if (BlockDevs[i].active == TRUE) {
+    //         MBR_Temp = readMBR_Info(&BlockDevs[i]);
+    //         // 检验是否MBR有效标志
+    //         if (MBR_Temp->magic_55 == 0x55 && MBR_Temp->magic_AA == 0xAA) {
+    //             //构造MBR_Device数据
+    //             md_temp = kmalloc(sizeof(MBR_Device_t));
+    //             memset(md_temp, 0, sizeof(MBR_Device_t));
+    //             md_temp->devid = i;
+    //             md_temp->dev = &BlockDevs[i];
+    //             memcpy(&(md_temp->mbr_diskinfo), MBR_Temp,
+    //                    sizeof(MBR_DiskInfo_t));
+    //             MBR_Count++;
+
+    //             listAdd(&(MBR_DeviceList->list_ptr), &(md_temp->list_ptr));
+                
+    //         }
+    //     }
+    // }
     printPartitionInfo();
 }
 
-static MBR_DiskInfo_t *readMBR_Info(BlockDev_t *blockdev) {
+static MBR_DiskInfo_t *readMBR_Info(Device_t *blockdev) {
     IOrequest_t req = {IO_READ, 0, 1, MBR_Temp, 512};
     if (blockdev->ops.request(&req) != 0) {
         panic("IO error!");

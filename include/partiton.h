@@ -1,7 +1,7 @@
 #ifndef __FS_H
 #define __FS_H
 
-#include "block_dev.h"
+#include "dev.h"
 #include "fat_fs.h"
 #include "types.h"
 #include "list.h"
@@ -41,7 +41,7 @@ typedef struct MBR_DiskInfo_t {
 
 typedef struct MBR_Device_t{
     uint32_t devid;
-    BlockDev_t* dev;
+    Device_t* dev;
     MBR_DiskInfo_t mbr_diskinfo;
     list_ptr_t list_ptr;
 }MBR_Device_t;
@@ -73,7 +73,7 @@ typedef struct FS_t {
     } fs_info;
     FS_Type_t type;
     PartitionDiskInfo_t *mbr_info;
-    BlockDev_t *dev;
+    Device_t *dev;
     uint32_t start_sector;
 
 } FS_t;

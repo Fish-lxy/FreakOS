@@ -2,7 +2,7 @@
 #define _DISKIO_H
 
 #include "types.h"
-#include "block_dev.h"
+#include "dev.h"
 
 #define _READONLY	0	/* 1: Read-only mode */
 #define _USE_IOCTL	1

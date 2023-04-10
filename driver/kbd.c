@@ -12,7 +12,7 @@ void kbdCallBack() {
 }
 
 void initKBD() {
-    enableIRQ(1);
+    enableIRQ(IRQ1);
     interruptHandlerRegister(IRQ1, kbdCallBack);
 }
 

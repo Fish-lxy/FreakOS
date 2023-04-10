@@ -66,18 +66,18 @@ static FRESULT auto_mount(const char **path, FATFS_SuperBlock **rfs,
 FATFS_SuperBlock *
     Fat_SuperBlock[_DRIVES]; /* Pointer to the file system objects (logical drives) */
 static WORD fsid;      /* File system mount ID */
-FAT_PARTITION Fat_Drives[8];
+FATBASE_Partition Fat_Drives[8];
 
 /****************************************************************************/
 
-FRESULT fat_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs) {
+FRESULT fatbase_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs) {
 
     char _path[4] = "0:/";
     DWORD bootsect = 0;
     char *mount_path = _path;
     if (fatfs != NULL) {
         bootsect = fatfs->boot_sector;
-        _path[0] = '0' + fatfs->fid;
+        _path[0] = '0' + fatfs->fatbase_part_index;
     }
 
     char **path = &mount_path;

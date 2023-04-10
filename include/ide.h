@@ -2,7 +2,7 @@
 #define __IDE_H
 
 #include "types.h"
-#include "block_dev.h"
+#include "dev.h"
 
 #define SECTSIZE                512
 
@@ -84,6 +84,7 @@ int _ide_ioctl(uint32_t ideno,int op, int flag);
 
 
 
-void setIDE_Data(uint32_t ideno);
+void setIDE_Device(uint32_t ideno);
+void setIDE_Device(uint32_t ideno, Device_t* dev);
 
 #endif

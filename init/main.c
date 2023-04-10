@@ -6,6 +6,7 @@
 #include "multiboot.h"
 #include "pmm.h"
 #include "sched.h"
+#include "serial.h"
 #include "task.h"
 #include "timer.h"
 #include "types.h"
@@ -21,7 +22,7 @@ void main() {
     consoleClear();
     // printk(" Paging Enabled.\n");
 
-    initDebug();
+    initKernelELF_Info();
 
     initGDT();
     initIDT();
@@ -29,9 +30,12 @@ void main() {
     initPMM();
     initVMM();
 
-    initRunQueue();
     initTask();
     initTimer();
+
+    initDebugSerial();
+    
+    sprintk("\nLoading FreakOS Kernel...\n");
 
     printk("\nLoading FreakOS Kernel...\n");
 
@@ -61,7 +65,7 @@ void main() {
 }
 void cpu_idle() {
     while (1) {
-        asm volatile("hlt");
+        //asm volatile("hlt");
         if (CurrentTask->need_resched != 0) {
             schedule();
         }

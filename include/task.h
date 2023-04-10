@@ -81,7 +81,11 @@ typedef struct TaskList_t {
 extern uint8_t KernelStack[];
 
 extern uint32_t kernel_cr3; // mm/vmm.c
+
+extern Task_t *idle_task;
 extern Task_t *CurrentTask;
+
+extern uint32_t TaskCount;
 
 
 void initTask();

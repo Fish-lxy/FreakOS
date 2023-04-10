@@ -20,8 +20,8 @@ void timerCallBack() {
     }
 }
 void initTimer() {
-    // consoleWriteColor("Init Timer...", TC_black, TC_light_blue);
     interruptHandlerRegister(IRQ0, timerCallBack);
+
     // Intel 8253/8254 PIT芯片 I/O端口地址范围是40h~43h
     // 输入频率为 1193180，FREQUENCY 即每秒中断次数
     uint32_t divisor = 1193180 / FREQUENCY;
@@ -39,5 +39,4 @@ void initTimer() {
     // 分别写入低字节和高字节
     outb(0x40, low);
     outb(0x40, high);
-    // consoleWriteColor("OK\n", TC_black, TC_yellow);
 }

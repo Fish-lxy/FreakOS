@@ -1,4 +1,4 @@
-#include "block_dev.h"
+#include "dev.h"
 #include "debug.h"
 #include "fat_base.h"
 #include "kmalloc.h"
@@ -10,14 +10,14 @@
 // FAT兼容层
 
 extern FATFS_SuperBlock *Fat_SuperBlock[]; // fat.c
-extern FAT_PARTITION Fat_Drives[];       // fat.c
+extern FATBASE_Partition Fat_Drives[];       // fat.c
 extern MBR_Device_t *MBR_DeviceList;
 
 uint32_t FatPartitionActiveCount = 0;
 FatFs_t FatFs[MAX_FATFS];
 
 static void setFatFs(FatFs_t *fatfs, MBR_Device_t *md, uint32_t partid, uint32_t fid);
-static FAT_PARTITION *setPARTITION(uint32_t pindex, uint32_t devid,
+static FATBASE_Partition *setFATBASE_Partition(uint32_t pindex, uint32_t devid,
                                    uint32_t partid);
 int32_t mountFatFs(FatFs_t *fatfs);
 
@@ -28,6 +28,7 @@ void testFatFs(){
     printk("\nFatFs:\n");
     //testKmalloc();
     detectFatFs();
+    printk("Files in Partiton 0:\n ");
     ls("0:/");
 }
 // 读取MBR的分区表信息，探测FAT分区，构造FatFs结构
@@ -65,11 +66,11 @@ void detectFatFs() {
     FatFs_t *f = &FatFs[0];
     f->mount(f);
     // showFAT(f->fatfs_sb);
-    printFatFs(f);
+    //printFatFs(f);
 }
 
 int32_t mountFatFs(FatFs_t *fatfs) {
-    return fat_do_mount(fatfs, &(fatfs->fatfs_sb));
+    return fatbase_do_mount(fatfs, &(fatfs->fatbase_sb));
 }
 
 // 构造FatFs结构,做mount前的准备工作
@@ -82,15 +83,15 @@ static void setFatFs(FatFs_t *fatfs, MBR_Device_t *md, uint32_t partid, uint32_t
     fatfs->active = FALSE;
     fatfs->devid = md->devid;
     fatfs->boot_sector = md->mbr_diskinfo.partinfo[partid].start_sector;
-    fatfs->fid = fid;
+    fatfs->fatbase_part_index = fid;
     if (Fat_SuperBlock[fid] == NULL) {
         Fat_SuperBlock[fid] = (FATFS_SuperBlock *)kmalloc(sizeof(FATFS_SuperBlock));
     }
-    fatfs->fatfs_sb = Fat_SuperBlock[fid]; // after mounted;
-    fatfs->fatfs_part = setPARTITION(fid, md->devid, partid);
+    fatfs->fatbase_sb = Fat_SuperBlock[fid]; // after mounted;
+    fatfs->fatbase_part = setFATBASE_Partition(fid, md->devid, partid);
 }
 // 设置fat驱动所需的FAT_PARTITION表
-static  FAT_PARTITION *setPARTITION(uint32_t pindex, uint32_t devid, uint32_t partid) {
+static FATBASE_Partition *setFATBASE_Partition(uint32_t pindex, uint32_t devid, uint32_t partid) {
     Fat_Drives[pindex].pd = devid;
     Fat_Drives[pindex].pt = partid;
     return &Fat_Drives[pindex];
@@ -118,10 +119,10 @@ void printFatFs(FatFs_t *f) {
     printk("active:%d\n", f->active);
     printk("devid:%d\n", f->devid);
     printk("bootsector:%d\n", f->boot_sector);
-    printk("fid:%d\n", f->fid);
-    printk("superblock:0x%08X\n", (uint32_t)f->fatfs_sb);
-    printk("partiton:0x%08X\n", f->fatfs_part);
-    printk("pd:%d,pt:%d\n", Fat_Drives[f->fid].pd, Fat_Drives[f->fid].pt);
+    printk("fatbase_part_index:%d\n", f->fatbase_part_index);
+    printk("superblock:0x%08X\n", (uint32_t)f->fatbase_sb);
+    printk("partiton:0x%08X\n", f->fatbase_part);
+    printk("pd:%d,pt:%d\n", Fat_Drives[f->fatbase_part_index].pd, Fat_Drives[f->fatbase_part_index].pt);
 }
 
 

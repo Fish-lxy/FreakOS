@@ -146,12 +146,12 @@ typedef struct _FILINFO {
 
 #if _MULTI_PARTITION != 0 /* Multiple partition cfg */
 
-typedef struct _PARTITION {
+typedef struct _PARTITION {//保存FAT分区与物理设备的转换表，在mount时赋值
     BYTE pd; /* Physical drive # (0-255) */
     BYTE pt; /* Partition # (0-3) */
-} FAT_PARTITION;
-extern FAT_PARTITION
-    Fat_Drives[]; /* Logical drive# to physical location conversion table */
+} FATBASE_Partition;
+extern FATBASE_Partition Fat_Drives[]; /* Logical drive# to physical location conversion table 
+                                        保存FAT分区与物理设备的转换表，在mount时赋值*/
 #define LD2PD(drv) (Fat_Drives[drv].pd) /* Get physical drive# */
 #define LD2PT(drv) (Fat_Drives[drv].pt) /* Get partition# */
 
@@ -328,7 +328,7 @@ DWORD get_fattime(void); /* 31-25: Year(0-127 org.1980), 24-21: Month(1-12),
 //fat_fs.h
 struct FatFs_t;
 typedef struct FatFs_t FatFs_t;
-FRESULT fat_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs);
+FRESULT fatbase_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs);
 FRESULT ls(const char *path);
 void showFAT(FATFS_SuperBlock *fs);
 

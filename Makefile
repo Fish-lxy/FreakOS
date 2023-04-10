@@ -54,7 +54,7 @@ umount:
 
 .PHONY:run
 run:
-	qemu-system-x86_64 -m 32m -hda disk.img -boot c
+	qemu-system-x86_64 -m 32m -hda disk.img -boot c -serial stdio
 
 .PHONY:run2
 run2:

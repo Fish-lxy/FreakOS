@@ -2,6 +2,7 @@
 #include "types.h"
 
 #include "task.h"
+#include "sched.h"
 #include "wait.h"
 
 // 唤醒与wait关联的进程
@@ -10,7 +11,7 @@ void wakeupWait(Wait_t *head, Wait_t *wait, uint32_t wakeup_flags, bool del) {
         waitlistDel(head, wait);
     }
     wait->flags = wakeup_flags;
-    // wakeTask(wait->proc);
+    wakeupTask(wait->task);
 }
 // 唤醒等待队列上挂着的第一个wait所关联的进程
 void wakeupFirst(Wait_t *head, uint32_t wakeup_flags, bool del) {
