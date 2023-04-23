@@ -35,7 +35,7 @@ void main() {
 
     initDebugSerial();
     
-    sprintk("\nLoading FreakOS Kernel...\n");
+    sprintk("Loading FreakOS Kernel...\n");
 
     printk("\nLoading FreakOS Kernel...\n");
 

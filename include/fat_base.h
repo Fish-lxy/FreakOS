@@ -13,8 +13,8 @@
 / * Redistributions of source code must retain the above copyright notice.
 /
 /---------------------------------------------------------------------------*/
-#ifndef __FAT_H
-#define __FAT_H
+#ifndef __FAT_BASE_H
+#define __FAT_BASE_H
 
 #ifndef _FATFS
 
@@ -27,23 +27,23 @@
 to 2. /  If it is not the case, it can also be set to 1 for good code
 efficiency. */
 
-#define _FS_READONLY 1
+#define _FS_READONLY 0
 /* Setting _FS_READONLY to 1 defines read only configuration. This removes
-/  writing functions, f_write, f_sync, f_unlink, f_mkdir, f_chmod, f_rename,
-/  f_truncate and useless f_getfree. */
+/  writing functions, fatbase_write, fatbase_sync, fatbase_unlink, fatbase_mkdir, fatbase_chmod, fatbase_rename,
+/  fatbase_truncate and useless fatbase_getfree. */
 
 #define _FS_MINIMIZE 0
 /* The _FS_MINIMIZE option defines minimization level to remove some functions.
 /  0: Full function.
-/  1: f_stat, f_getfree, f_unlink, f_mkdir, f_chmod, f_truncate and f_rename are
-removed. /  2: f_opendir and f_readdir are removed in addition to level 1. /  3:
-f_lseek is removed in addition to level 2. */
+/  1: fatbase_stat, fatbase_getfree, fatbase_unlink, fatbase_mkdir, fatbase_chmod, fatbase_truncate and fatbase_rename are
+removed. /  2: f_opendir and fatbase_readdir are removed in addition to level 1. /  3:
+fatbase_lseek is removed in addition to level 2. */
 
 #define _DRIVES 8
 /* Number of logical drives to be used. This affects the size of internal table.
  */
 
-#define _USE_MKFS 0
+#define _USE_MKFS 1
 /* When _USE_MKFS is set to 1 and _FS_READONLY is set to 0, f_mkfs function is
 /  enabled. */
 
@@ -64,7 +64,7 @@ f_lseek is removed in addition to level 2. */
 /  Note that the files are always accessed in case insensitive. */
 
 #include "fat_integer.h"
-// #include "fat_fs.h"
+// #include "fat.h"
 
 /* Definitions corresponds to multiple sector size (not tested) */
 #define S_MAX_SIZ 512 /* Do not change */
@@ -103,24 +103,24 @@ typedef struct _FATFS_SuperBlock {
     BYTE winflag; /* win[] dirty flag (1:must be written back) */
     BYTE pad1;
     BYTE win[S_MAX_SIZ]; /* Disk access window for Directory/FAT */
-} FATFS_SuperBlock;
+} FATBase_SuperBlock;
 
 /* Directory object structure */
 typedef struct _DIR {
     WORD id;      /* Owner file system mount ID */
     WORD index;   /* Current index */
-    FATFS_SuperBlock *fs;    /* Pointer to the owner file system object */
+    FATBase_SuperBlock *fs;    /* Pointer to the owner file system object */
     DWORD sclust; /* Start cluster */
     DWORD clust;  /* Current cluster */
     DWORD sect;   /* Current sector */
-} DIR;
+} FATBase_DIR;
 
 /* File object structure */
 typedef struct _FIL {
     WORD id;          /* Owner file system mount ID */
     BYTE flag;        /* File status flags */
     BYTE sect_clust;  /* Left sectors in cluster */
-    FATFS_SuperBlock *fs;        /* Pointer to the owner file system object */
+    FATBase_SuperBlock *fs;        /* Pointer to the owner file system object */
     DWORD fptr;       /* File R/W pointer */
     DWORD fsize;      /* File size */
     DWORD org_clust;  /* File start cluster */
@@ -131,7 +131,7 @@ typedef struct _FIL {
     BYTE *dir_ptr;  /* Ponter to the directory entry in the window */
 #endif
     BYTE buffer[S_MAX_SIZ]; /* File R/W buffer */
-} FIL;
+} FATBase_FILE;
 
 /* File status structure */
 typedef struct _FILINFO {
@@ -140,7 +140,7 @@ typedef struct _FILINFO {
     WORD ftime;                /* Time */
     BYTE fattrib;              /* Attribute */
     char fname[8 + 1 + 3 + 1]; /* Name (8.3 format) */
-} FILINFO;
+} FATBase_FILINFO;
 
 /* Definitions corresponds to multi partition */
 
@@ -149,9 +149,10 @@ typedef struct _FILINFO {
 typedef struct _PARTITION {//保存FAT分区与物理设备的转换表，在mount时赋值
     BYTE pd; /* Physical drive # (0-255) */
     BYTE pt; /* Partition # (0-3) */
-} FATBASE_Partition;
-extern FATBASE_Partition Fat_Drives[]; /* Logical drive# to physical location conversion table 
+} FATBase_Partition;
+extern FATBase_Partition Fat_Drives[]; /* Logical drive# to physical location conversion table 
                                         保存FAT分区与物理设备的转换表，在mount时赋值*/
+
 #define LD2PD(drv) (Fat_Drives[drv].pd) /* Get physical drive# */
 #define LD2PT(drv) (Fat_Drives[drv].pt) /* Get partition# */
 
@@ -184,25 +185,26 @@ typedef enum {
 /*-----------------------------------------------------*/
 /* FatFs module application interface                  */
 
-FRESULT f_mount(BYTE, FATFS_SuperBlock *);              /* Mount/Unmount a logical drive */
-FRESULT f_open(FIL *, const char *, BYTE);   /* Open or create a file */
-FRESULT f_read(FIL *, void *, UINT, UINT *); /* Read data from a file */
-FRESULT f_write(FIL *, const void *, UINT, UINT *); /* Write data to a file */
-FRESULT f_lseek(FIL *, DWORD);          /* Move file pointer of a file object */
-FRESULT f_close(FIL *);                 /* Close an open file object */
-FRESULT f_opendir(DIR *, const char *); /* Open an existing directory */
-FRESULT f_readdir(DIR *, FILINFO *);    /* Read a directory item */
-FRESULT f_stat(const char *, FILINFO *); /* Get file status */
-FRESULT f_getfree(const char *, DWORD *,
-                  FATFS_SuperBlock **);    /* Get number of free clusters on the drive */
-FRESULT f_truncate(FIL *);      /* Truncate file */
-FRESULT f_sync(FIL *);          /* Flush cached data of a writing file */
-FRESULT f_unlink(const char *); /* Delete an existing file or directory */
-FRESULT f_mkdir(const char *);  /* Create a new directory */
-FRESULT f_chmod(const char *, BYTE, BYTE);      /* Change file/dir attriburte */
-FRESULT f_utime(const char *, const FILINFO *); /* Change file/dir timestamp */
-FRESULT f_rename(const char *,
+FRESULT f_mount(BYTE, FATBase_SuperBlock *);              /* Mount/Unmount a logical drive */
+FRESULT fatbase_open(FATBase_FILE *, const char *, BYTE);   /* Open or create a file */
+FRESULT fatbase_read(FATBase_FILE *, void *, UINT, UINT *); /* Read data from a file */
+FRESULT fatbase_write(FATBase_FILE *, const void *, UINT, UINT *); /* Write data to a file */
+FRESULT fatbase_lseek(FATBase_FILE *, DWORD);          /* Move file pointer of a file object */
+FRESULT fatbase_close(FATBase_FILE *);                 /* Close an open file object */
+FRESULT fatbase_opendir(FATBase_DIR *, const char *); /* Open an existing directory */
+FRESULT fatbase_readdir(FATBase_DIR *, FATBase_FILINFO *);    /* Read a directory item */
+FRESULT fatbase_stat(const char *, FATBase_FILINFO *); /* Get file status */
+FRESULT fatbase_getfree(const char *, DWORD *,
+                  FATBase_SuperBlock **);    /* Get number of free clusters on the drive */
+FRESULT fatbase_truncate(FATBase_FILE *);      /* Truncate file */
+FRESULT fatbase_sync(FATBase_FILE *);          /* Flush cached data of a writing file */
+FRESULT fatbase_unlink(const char *); /* Delete an existing file or directory */
+FRESULT fatbase_mkdir(const char *);  /* Create a new directory */
+FRESULT fatbase_chmod(const char *, BYTE, BYTE);      /* Change file/dir attriburte */
+FRESULT fatbase_utime(const char *, const FATBase_FILINFO *); /* Change file/dir timestamp */
+FRESULT fatbase_rename(const char *,
                  const char *);   /* Rename/Move a file or directory */
+
 FRESULT f_mkfs(BYTE, BYTE, WORD); /* Create a file system on the drive */
 
 /* User defined function to give a current time to fatfs module */
@@ -211,21 +213,33 @@ DWORD get_fattime(void); /* 31-25: Year(0-127 org.1980), 24-21: Month(1-12),
                             20-16: Day(1-31) */
 /* 15-11: Hour(0-23), 10-5: Minute(0-59), 4-0: Second(0-29 *2) */
 
-/* File access control and file status flags (FIL.flag) */
+/* File access control and file status flags (FATBase_FILE.flag) */
 
-#define FA_READ 0x01
-#define FA_OPEN_EXISTING 0x00
+
+// POSIX	FatFs
+// "r"	    FA_READ
+// "r+"	    FA_READ | FA_WRITE
+// "w"	    FA_CREATE_ALWAYS | FA_WRITE
+// "w+"	    FA_CREATE_ALWAYS | FA_WRITE | FA_READ
+// "a"	    FA_OPEN_APPEND | FA_WRITE
+// "a+"	    FA_OPEN_APPEND | FA_WRITE | FA_READ
+// "wx"	    FA_CREATE_NEW | FA_WRITE
+// "w+x"	FA_CREATE_NEW | FA_WRITE | FA_READ
+
+
+#define FA_READ 0x01 //Specifies read access to the file. Data can be read from the file.
+#define FA_OPEN_EXISTING 0x00 //Opens a file. The function fails if the file is not existing. (Default)
 #if _FS_READONLY == 0
-#define FA_WRITE 0x02
-#define FA_CREATE_NEW 0x04
-#define FA_CREATE_ALWAYS 0x08
-#define FA_OPEN_ALWAYS 0x10
+#define FA_WRITE 0x02 //Specifies write access to the file. Data can be written to the file. Combine with FA_READ for read-write access.
+#define FA_CREATE_NEW 0x04 //Creates a new file. The function fails with FR_EXIST if the file is existing.
+#define FA_CREATE_ALWAYS 0x08 //Creates a new file. If the file is existing, it will be truncated and overwritten.
+#define FA_OPEN_ALWAYS 0x10 //Opens the file if it is existing. If not, a new file will be created.
 #define FA__WRITTEN 0x20
 #define FA__DIRTY 0x40
 #endif
 #define FA__ERROR 0x80
 
-/* FAT sub type (FATFS_SuperBlock.fs_type) */
+/* FAT sub type (FATBase_SuperBlock.fs_type) */
 
 #define FS_FAT12 1
 #define FS_FAT16 2
@@ -325,12 +339,14 @@ DWORD get_fattime(void); /* 31-25: Year(0-127 org.1980), 24-21: Month(1-12),
 
 // for mount in kernel
 
-//fat_fs.h
+//fat.h
 struct FatFs_t;
 typedef struct FatFs_t FatFs_t;
-FRESULT fatbase_do_mount(FatFs_t *fatfs, FATFS_SuperBlock **rfs);
+
+
+FRESULT fatbase_do_mount(FatFs_t *fatfs, FATBase_SuperBlock **rfs);
 FRESULT ls(const char *path);
-void showFAT(FATFS_SuperBlock *fs);
+void showFAT(FATBase_SuperBlock *fs);
 
 #define _FATFS
 #endif /* _FATFS */

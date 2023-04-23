@@ -35,6 +35,7 @@ static int memcmp(const void* buffer1, const void* buffer2, int count){
 static inline void bzero(void* dest, uint32_t len) {
     memset(dest, 0, len);
 }
+//strcmp(str1,str2)，若str1=str2，则返回零；若str1<str2，则返回负数；若str1>str2，则返回正数
 static inline int strcmp(const char* str1, const char* str2) {
     int ret;
     size_t i;

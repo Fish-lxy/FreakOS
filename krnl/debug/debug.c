@@ -1,6 +1,7 @@
 #include "debug.h"
 #include "console.h"
 #include "elf.h"
+#include "intr_sync.h"
 #include "mm.h"
 #include "multiboot.h"
 #include "pmm.h"
@@ -69,19 +70,24 @@ void printkColor(const char *format, TEXT_color_t back, TEXT_color_t fore,
 
     consoleWriteColor(buf, back, fore);
 }
-//向串口输出字符串
-void sprintk(const char *format, ...){
-    static char buf[512];
-    va_list args;
-    int i;
+// 向串口输出字符串
+void sprintk(const char *format, ...) {
+    bool flag;
+    intr_save(flag);
+    {
+        static char buf[512];
+        va_list args;
+        int i;
 
-    va_start(args, format);
-    i = vsprintf(buf, format, args);
-    va_end(args);
+        va_start(args, format);
+        i = vsprintf(buf, format, args);
+        va_end(args);
 
-    buf[i] = '\0';
+        buf[i] = '\0';
 
-    serialWriteStr(buf);
+        serialWriteStr(buf);
+    }
+    intr_restore(flag);
 }
 
 void _panic(const char *msg, const char *filename) {

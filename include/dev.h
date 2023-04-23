@@ -1,5 +1,5 @@
-#ifndef __BLOCK_DEV_H
-#define __BLOCK_DEV_H
+#ifndef __DEV_H
+#define __DEV_H
 
 #include "types.h"
 #include "list.h"
@@ -35,8 +35,8 @@ typedef
 struct DeviceOps_t {
     int (*init)(void);
     bool (*is_vaild)(void);
-    const char* (*get_desc)(void);
-    int (*get_nr_block)(void);
+    const char* (*get_desc)(void);//获得设备描述字符串
+    int (*get_nr_block)(void);//获得设备总块数(若有的话)
     int (*request)(IOrequest_t*);
     int (*ioctl)(int, int);
 
@@ -48,8 +48,8 @@ struct Device_t {
     int32_t id;
     char* name;
     bool active;
-    uint32_t block_size;
-    void* device;//指向底层驱动
+    uint32_t block_size;//块大小
+    void* base_device;//指向底层驱动
     DeviceType_e type;
     DeviceOps_t ops;
 
@@ -61,9 +61,10 @@ struct Device_t {
 
 
 
-void initBlockdev();
+void initDevice();
 int registerBlockDev(Device_t* dev);
-Device_t* getDeviceWithDevid(uint32_t devid);
+int32_t getNewDevid();
+Device_t* getDeviceWithId(uint32_t devid);
 
 
 #endif

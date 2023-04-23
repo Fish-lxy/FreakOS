@@ -9,8 +9,11 @@ uint32_t BlockDevsActiveCount = 0;
 
 Device_t *DeviceList = NULL;
 
-void initBlockdev() {
-    printk("Detected disk device:\n");
+
+void printDevice();
+
+void initDevice() {
+    printk("Detected device:\n");
 
     DeviceList = kmalloc(sizeof(Device_t));
     if (DeviceList == NULL) {
@@ -18,6 +21,7 @@ void initBlockdev() {
     }
     initList(&(DeviceList->list_ptr));
 
+    // 初始化IDE设备
     for (int i = 0; i < MAX_IDE; i++) {
         Device_t *dev = kmalloc(sizeof(Device_t));
         if (DeviceList == NULL) {
@@ -35,20 +39,9 @@ void initBlockdev() {
             BlockDevsActiveCount++;
         }
     }
+    printDevice();
 
-    list_ptr_t *listi = NULL;
-    listForEach(listi, &(DeviceList->list_ptr)) {
-        Device_t *dev = lp2dev(listi, list_ptr);
-        if (dev->ops.init == NULL || dev->ops.init() != 0) {
-            printk(" IDE %d: does not exist!\n", dev->id);
-            continue;
-        }
-        if (dev->ops.is_vaild() == TRUE) {
-            printk(" IDE %d: %dMB, '%s'.\n", dev->id,
-                   dev->ops.get_nr_block() * dev->block_size / 1024 / 1024,
-                   dev->ops.get_desc());
-        }
-    }
+    
 
     // 仅初始化前两个硬盘为块设备
     // for (int i = 0; i < MAX_IDE; i++) {
@@ -78,7 +71,7 @@ void initBlockdev() {
     
 }
 //通过设备号搜索对应的设备
-Device_t *getDeviceWithDevid(uint32_t devid) {
+Device_t *getDeviceWithId(uint32_t devid) {
     list_ptr_t *listi = NULL;
     Device_t *dev = NULL;
     listForEach(listi, &(DeviceList->list_ptr)) {
@@ -93,5 +86,20 @@ int32_t getNewDevid() {
     static int32_t next = -1;
     next++;
     return next;
+}
+void printDevice(){
+    list_ptr_t *listi = NULL;
+    listForEach(listi, &(DeviceList->list_ptr)) {
+        Device_t *dev = lp2dev(listi, list_ptr);
+        if (dev->ops.init == NULL || dev->ops.init() != 0) {
+            printk(" IDE %d: does not exist!\n", dev->id);
+            continue;
+        }
+        if (dev->ops.is_vaild() == TRUE) {
+            printk(" %d:%s: %dMB, '%s'.\n", dev->id,dev->name,
+                   dev->ops.get_nr_block() * dev->block_size / 1024 / 1024,
+                   dev->ops.get_desc());
+        }
+    }
 }
 int registerBlockDev(Device_t *dev) {}

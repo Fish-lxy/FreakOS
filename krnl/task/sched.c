@@ -66,22 +66,26 @@ void schedule() {
     {
         //sprintk("开始调度:\n");
 
-        CurrentTask->need_resched = 0;
+        CurrentTask->need_resched = 0;// 令Current进程处于不需要调度的状态
+        // 如果当前进程依然是就绪态，将其置入就绪队列(有机会再被调度算法选出来)
         if (CurrentTask->state == TASK_RUNNABLE) {
             if (CurrentTask != idle_task) {
                 enqueueRunQueue(&RunQueue, CurrentTask);
                 //sprintk(" 当前进程%d入队\n", CurrentTask->tid);
             }
         }
+        // 通过调度算法筛选出下一个需要被调度的进程
         if ((next = getHeadRunQueue(&RunQueue)) != NULL) {
+            // 如果选出来了，将其从就绪队列中出队
             dequeueRunQueue(&RunQueue, next);
             //sprintk(" 进程%d出队\n", CurrentTask->tid);
         }
         if (next == NULL) {
-            next = idle_task;
+            next = idle_task;// 没有找到任何一个就绪进程，则由idleproc获得CPU
         }
         if (next != CurrentTask) {
             //sprintk("选择的进程:%d\n", next->tid);
+            // 如果被选出来的进程不是current当前正在执行的进程，进行进程切换
             runTask(next);
         }
 

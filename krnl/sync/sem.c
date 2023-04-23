@@ -64,7 +64,7 @@ static void up(Semaphore_t *sem, uint32_t wait_state) {
     intr_restore(intr_flag);
 }
 
-void acquireSem(Semaphore_t *sem) {
+void accquireSem(Semaphore_t *sem) {
     uint32_t flag = down(sem, WT_KSEM);
     if (flag != 0) {
         panic("Sem flag is not 0!");

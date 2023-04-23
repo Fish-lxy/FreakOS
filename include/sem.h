@@ -12,7 +12,7 @@ typedef struct Semaphore_t {
 
 void initSem(Semaphore_t *sem, int32_t value);
 
-void acquireSem(Semaphore_t *sem);
+void accquireSem(Semaphore_t *sem);
 void releaseSem(Semaphore_t *sem);
 
 #endif

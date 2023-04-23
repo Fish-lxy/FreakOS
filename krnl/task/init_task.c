@@ -1,3 +1,4 @@
+#include "bcache.h"
 #include "debug.h"
 #include "gdt.h"
 #include "ide.h"
@@ -10,8 +11,9 @@
 #include "task.h"
 #include "types.h"
 #include "vmm.h"
+#include "vfs.h"
 
-#include "fat_fs.h"
+#include "fat.h"
 #include "partiton.h"
 
 volatile uint32_t sum = 0;
@@ -32,11 +34,10 @@ void testA() {
     // }
     // printk("A:%d\n",sum);
 
-    initSem(&sem, 0);
+    // initSem(&sem, 0);
 
-    acquireSem(&sem);
-    printk("second\n");
-
+    // accquireSem(&sem);
+    // printk("second\n");
 }
 void testB() {
     int i = 0;
@@ -54,26 +55,36 @@ void testB() {
     // }
     // printk("B:%d\n",sum);
 
-    printk("first\n");
-    releaseSem(&sem);
+    // printk("first\n");
+    // releaseSem(&sem);
 }
-
 
 // 系统的第二个进程 init
 int init_task_func(void *arg) {
     // init内核进程将会接手 main 函数的工作，继续内核的初始化
     sprintk("init进程开始：\n");
     printk("Start init process:\n");
-    initBlockdev();
-    initPartitionTable(); // 从MBR中读取并初始化磁盘分区表信息
 
-    testFatFs();
     initKBD();
+    initDevice();
+    initPartitionTable(); // 从MBR中读取并初始化磁盘分区表信息
+    initBlockCache();
 
-    createKernelThread(testA, NULL, 0);
-    createKernelThread(testB, NULL, 0);
 
-    //testRunQueue();
+
+
+    
+    initFS();
+    testVFS();
+    testFatInode();
+    
+
+    //createKernelThread(testA, NULL, 0);
+    //createKernelThread(testB, NULL, 0);
+
+    //testBCache();
+    
+    // testRunQueue();
 
     // printk("Msg: %s\n", (const char*) arg);
 

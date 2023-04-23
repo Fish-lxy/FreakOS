@@ -32,7 +32,7 @@
 #define MAX_IDE                 4
 #define MAX_NSECS               128             // IDE设备最大操作扇区数
 #define MAX_DISK_NSECS          0x10000000      // IDE设备最大扇区号
-#define VALID_IDE(ideno)        (((ideno) >= 0) && ((ideno) < MAX_IDE) && (ide_devices[ideno].valid))
+#define VALID_IDE(ideno)        (((ideno) >= 0) && ((ideno) < MAX_IDE) && (IDE_Devices[ideno].valid))
 
 // IDE设备身份信息在读取的信息块中的偏移
 #define IDE_IDENT_SECTORS       20
@@ -84,7 +84,6 @@ int _ide_ioctl(uint32_t ideno,int op, int flag);
 
 
 
-void setIDE_Device(uint32_t ideno);
 void setIDE_Device(uint32_t ideno, Device_t* dev);
 
 #endif

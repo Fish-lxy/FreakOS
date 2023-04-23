@@ -4,11 +4,12 @@
 #include <types.h>
 #include <cpu.h>
 
+//IDE磁盘底层驱动
 IDEchannel_t ide_channels[2] = {
     {IO_BASE0, IO_CTRL0},
     {IO_BASE1, IO_CTRL1},
 };
-IDEdevice ide_devices[MAX_IDE];
+IDEdevice IDE_Devices[MAX_IDE];
 
 static int ide_wait_ready(unsigned short iobase, bool check_error);
 static int ide_read_secs(unsigned short ideno, uint32_t secno, void* dst, size_t nsecs);
@@ -96,16 +97,16 @@ int _ide_request(uint32_t ideno, IOrequest_t* req) {
     return -1;
 }
 bool _ide_device_isvaild(uint32_t ideno) {
-    return ide_devices[ideno].valid == 1;
+    return IDE_Devices[ideno].valid == 1;
 }
 uint32_t _ide_get_nr_block(uint32_t ideno) {
     if (_ide_device_isvaild(ideno)) {
-        return ide_devices[ideno].size;
+        return IDE_Devices[ideno].size;
     }
     return 0;
 }
 const char* _ide_get_desc(uint32_t ideno) {
-    return (const char*) (ide_devices[ideno].desc);
+    return (const char*) (IDE_Devices[ideno].desc);
 }
 int _ide_ioctl(uint32_t ideno, int op, int flag) {
     if (op != 0 && flag != 0) {
@@ -118,7 +119,7 @@ int _ide_device_init(uint16_t ideno) {
     if (ideno > MAX_IDE - 1)
         return -1;
     uint16_t iobase;
-    ide_devices[ideno].valid = 0;
+    IDE_Devices[ideno].valid = 0;
     iobase = IO_BASE(ideno);
     ide_wait_ready(iobase, 0);
 
@@ -135,7 +136,7 @@ int _ide_device_init(uint16_t ideno) {
         return -1;
     }
 
-    ide_devices[ideno].valid = 1;
+    IDE_Devices[ideno].valid = 1;
 
     uint32_t buffer[128];
     insl(iobase + ISA_DATA, buffer, sizeof(buffer) / sizeof(uint32_t));
@@ -149,12 +150,12 @@ int _ide_device_init(uint16_t ideno) {
     else {
         sectors = *(uint32_t*) (ident + IDE_IDENT_MAX_LBA);
     }
-    ide_devices[ideno].sets = cmdsets;
-    ide_devices[ideno].size = sectors;
+    IDE_Devices[ideno].sets = cmdsets;
+    IDE_Devices[ideno].size = sectors;
     //检查LBA
     assert((*(uint16_t*) (ident + IDE_IDENT_CAPABILITIES) & 0x200) != 0, "LBA is not supported!");
 
-    uint8_t* desc = ide_devices[ideno].desc;
+    uint8_t* desc = IDE_Devices[ideno].desc;
     uint8_t* data = ident + IDE_IDENT_MODEL;
     uint32_t i, length = 40;
     for (i = 0;i < length;i += 2) {

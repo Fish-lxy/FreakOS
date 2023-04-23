@@ -15,12 +15,18 @@ void* dokmalloc2(uint32_t bytes);
 void dokfree2(uint32_t* vaddr, uint32_t bytes);
 
 // 为内核数据结构申请内存，分配的内存地址带3GB偏移
-void *kmalloc(uint32_t bytes) { 
-    return dokmalloc2(bytes);
+void *kmalloc(uint32_t bytes) {
+    void* vaddr =  dokmalloc2(bytes);
+    sprintk("内核申请内存:0x%08X,%dB\n",vaddr,bytes);
+    if(vaddr == NULL){
+        sprintk("申请内存失败!\n");
+    }
+    return vaddr;
     // return doKmalloc(bytes); 
 }
 void kfree(void *vaddr, uint32_t bytes) {
     dokfree2(vaddr, bytes);
+    sprintk("内核释放内存:0x%08X,%dB\n",vaddr,bytes);
     // uint32_t err = doKfree(vaddr, bytes);
     // if (err == -1) {
     //     panic("kfree: error size");

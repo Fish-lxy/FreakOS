@@ -1,12 +1,12 @@
 #include "partiton.h"
-#include "dev.h"
 #include "debug.h"
+#include "dev.h"
 #include "kmalloc.h"
 #include "list.h"
 #include "string.h"
 #include "types.h"
 
-extern Device_t* DeviceList;
+extern Device_t *DeviceList;
 
 MBR_Device_t *MBR_DeviceList;
 MBR_DiskInfo_t *MBR_Temp;
@@ -17,11 +17,11 @@ static MBR_DiskInfo_t *readMBR_Info(Device_t *blockdev);
 // 从MBR中读取并初始化磁盘分区表信息
 void initPartitionTable() {
     MBR_Temp = kmalloc(sizeof(MBR_DiskInfo_t));
-    if(MBR_Temp == NULL){
+    if (MBR_Temp == NULL) {
         panic("MBR_Temp malloc error!");
     }
     MBR_DeviceList = kmalloc(sizeof(MBR_Device_t));
-    if(MBR_DeviceList == NULL){
+    if (MBR_DeviceList == NULL) {
         panic("MBR_DeviceList malloc error!");
     }
     MBR_Device_t *md_temp = NULL;
@@ -31,11 +31,11 @@ void initPartitionTable() {
     list_ptr_t *listi = NULL;
     listForEach(listi, &(DeviceList->list_ptr)) {
         Device_t *dev = lp2dev(listi, list_ptr);
-        if(dev->active == TRUE && dev->type == BlockDevice){
+        if (dev->active == TRUE && dev->type == BlockDevice) {
             MBR_Temp = readMBR_Info(dev);
             // 检验是否MBR有效标志
             if (MBR_Temp->magic_55 == 0x55 && MBR_Temp->magic_AA == 0xAA) {
-                //构造MBR_Device数据
+                // 构造MBR_Device数据
                 md_temp = kmalloc(sizeof(MBR_Device_t));
                 memset(md_temp, 0, sizeof(MBR_Device_t));
                 md_temp->devid = dev->id;
@@ -45,7 +45,6 @@ void initPartitionTable() {
                 MBR_Count++;
 
                 listAdd(&(MBR_DeviceList->list_ptr), &(md_temp->list_ptr));
-                
             }
         }
     }
@@ -65,7 +64,7 @@ void initPartitionTable() {
     //             MBR_Count++;
 
     //             listAdd(&(MBR_DeviceList->list_ptr), &(md_temp->list_ptr));
-                
+
     //         }
     //     }
     // }
@@ -87,7 +86,7 @@ int printPartitionInfo() {
     PartitionDiskInfo_t *pdi = NULL;
     printk("Partition Info:\n");
 
-    listForEach(listi,lp){
+    listForEach(listi, lp) {
         md = lp2MBR_Device(listi, list_ptr);
         pdi = md->mbr_diskinfo.partinfo;
         for (int i = 0; i < MBR_PARTITION_COUNT; ++i) {
