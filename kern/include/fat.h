@@ -49,10 +49,10 @@ typedef struct FatFs_t {
 
 } FatFs_t;
 
-typedef enum FATBaseType_e {
+typedef enum FATINodeType_e {
     FAT_Type_File = 0,
     FAT_Type_Dir = 1
-} FATBaseType_e;
+} FATINodeType_e;
 
 typedef union FATBase_InodeData_u {
     FATBase_FILE file;
@@ -65,7 +65,7 @@ typedef struct FatINode_t {
     char *internal_path; // 内部路径 在堆上分配
     uint32_t flag;       // 打开文件标志，仅FAT兼容层使用
 
-    FATBaseType_e fatinode_type;
+    FATINodeType_e fatinode_type;
     FATBase_InodeData_u fatbase_data;
 
     Semaphore_t sem;
@@ -103,8 +103,8 @@ INode_t *fat_find_inode(FatFs_t *fatfs, char *path);
 int fat_lookup(INode_t *inode, char *relative_path, INode_t **inode_out);
 
 int fat_openfile(INode_t *inode, int flag); // 打开/创建文件
-int fat_read(INode_t *inode, void *buf, uint32_t len);
-int fat_write(INode_t *inode, void *buf, uint32_t len);
+int fat_read(INode_t *inode, void *buf, uint32_t len, uint32_t *copied);
+int fat_write(INode_t *inode, void *buf, uint32_t len, uint32_t *copied);
 int fat_lseek(INode_t *inode, int32_t off);
 int fat_truncate(INode_t *inode, uint32_t len); // 将文件大小截断为len
 
@@ -125,5 +125,7 @@ int fat_sync(INode_t *inode);
 
 int fat_get_type(INode_t *inode, int32_t *type_out);
 //ioctl
+
+void printFatINode(INode_t *inode);
 
 #endif

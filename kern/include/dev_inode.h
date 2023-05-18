@@ -27,6 +27,7 @@ typedef struct DevINode_t {
 INode_t *create_vdev_inode(INodeOps_t *ops);
 
 void blk_init_vdev();
+void stdin_init_vdev();
 void stdout_init_vdev();
 
 #endif

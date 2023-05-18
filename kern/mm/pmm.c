@@ -11,7 +11,7 @@ static void getMemInfo();    // 从MultiBoot_t中获取物理内存信息
 static void pmmanagerInit(); // 初始化内存管理器
 static void freeAreaInit();
 static void pagesInit(); // 设置Pages数组，将数组中的所有Page设为reserved
-static void memmapInit(PageBlock_t *base, size_t n);
+static void memmapInit(PhyPageBlock_t *base, size_t n);
 
 // 物理内存管理器
 static PMManager_t Manager;
@@ -19,7 +19,7 @@ uint32_t PhyMemSize; // 物理内存字节大小
 uint32_t PhyMemEnd;  // 可用物理内存结尾
 
 uint32_t PageCount;    // 所有的物理内存页框数量
-PageBlock_t *Pages;    // Page结构保存起始虚拟地址
+PhyPageBlock_t *Pages;    // Page结构保存起始虚拟地址
 uint32_t FreeMemStart; // 可用内存起始物理地址
 FreeList FreeArea;     // 空闲区域链表
 
@@ -30,7 +30,7 @@ void initPMM() {
     pmmanagerInit();
     freeAreaInit();
     pagesInit();
-    memmapInit(pa2page(FreeMemStart), (PhyMemEnd - FreeMemStart) / PMM_PGSIZE);
+    memmapInit(pa2page(FreeMemStart), (PhyMemEnd - FreeMemStart) / PGSIZE);
 
     printk("Free Memory: %dKB~%dMB\n", (PhyMemEnd - FreeMemStart) / 1024,
            (PhyMemEnd - FreeMemStart) / 1024 / 1024);
@@ -46,7 +46,7 @@ void pmmanagerInit() {
 }
 void getMemInfo() {
     uint32_t mmap_addr =
-        GlbMbootPtr->mmap_addr + KERNEL_OFFSET; // 分页后需要加上偏移
+        GlbMbootPtr->mmap_addr + KERNEL_BASE; // 分页后需要加上偏移
     uint32_t mmap_length = GlbMbootPtr->mmap_length;
     for (mmapEntry_t *mmap = (mmapEntry_t *)mmap_addr;
          (uint32_t)mmap < mmap_addr + mmap_length; mmap++) {
@@ -64,9 +64,9 @@ void getMemInfo() {
 void pagesInit() {
     uint32_t end = kern_end;
     // Pages起始于内核结束后新的一页
-    Pages = (PageBlock_t *)ROUNDUP((void *)end, PMM_PGSIZE);
+    Pages = (PhyPageBlock_t *)ROUNDUP((void *)end, PGSIZE);
 
-    PageCount = PhyMemSize / PMM_PGSIZE;
+    PageCount = PhyMemSize / PGSIZE;
 
     // 先将所有页都设定为保留
     for (uint32_t i = 0; i < PageCount; i++) {
@@ -75,14 +75,14 @@ void pagesInit() {
     }
     // 空闲内存起始于Pages数组结束后新的一页
     FreeMemStart =
-        ROUNDUP((void *)(&(Pages[PageCount])), PMM_PGSIZE) - KERNEL_OFFSET;
+        ROUNDUP((void *)(&(Pages[PageCount])), PGSIZE) - KERNEL_BASE;
 }
 
 void freeAreaInit() { Manager.free_area_init(); }
-void memmapInit(PageBlock_t *base, size_t n) { Manager.memmap_init(base, n); }
+void memmapInit(PhyPageBlock_t *base, size_t n) { Manager.memmap_init(base, n); }
 
-PageBlock_t *allocPhyPages(size_t n) { return Manager.alloc_pages(n); }
-void freePhyPages(PageBlock_t *base, size_t n) { Manager.free_pages(base, n); }
+PhyPageBlock_t *allocPhyPages(size_t n) { return Manager.alloc_pages(n); }
+void freePhyPages(PhyPageBlock_t *base, size_t n) { Manager.free_pages(base, n); }
 
 uint32_t getFreeMem() {
     
@@ -94,7 +94,7 @@ uint32_t getFreeMem() {
     //     lp = listGetNext(lp);
     // }
 
-    PageBlock_t *p;
+    PhyPageBlock_t *p;
     list_ptr_t *free_block_list = &(FreeArea.ptr);
     list_ptr_t *i = NULL;
     listForEach(i,free_block_list){
@@ -103,7 +103,7 @@ uint32_t getFreeMem() {
         free_pageblocks += p->property;
         
     }
-    free_membytes = free_pageblocks * PMM_PGSIZE;
+    free_membytes = free_pageblocks * PGSIZE;
     return free_membytes;
 }
 void printFreeMem(){

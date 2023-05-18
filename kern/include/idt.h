@@ -15,12 +15,20 @@
 
 #define PIC_EOI 0x20
 
+typedef struct IDT_Flag_t{
+    unsigned gd_type : 4;           // type(STS_{TG,IG32,TG32})
+    unsigned gd_s : 1;              // must be 0 (system)
+    unsigned gd_dpl : 2;            // descriptor(meaning new) privilege level
+    unsigned gd_p : 1;  
+} __attribute__((packed)) IDT_Flag_t;
+
 // 中断描述符
 typedef struct IDT_Entry_t {
     uint16_t base_low;     // 中断处理函数地址低位
     uint16_t seg_selector; // 目标代码段描述符选择子
     uint8_t always0;       // 0 段
     uint8_t flags;         // 标志段
+    
     uint16_t base_high;    // 中断处理函数地址高位
 } __attribute__((packed)) IDT_Entry_t;
 
@@ -65,7 +73,7 @@ typedef struct InterruptFrame_t {
 typedef void (*InterruptHandler_t)(InterruptFrame_t *);
 
 // 注册中断处理函数
-void interruptHandlerRegister(uint8_t n, InterruptHandler_t h);
+void intrHandlerRegister(uint8_t n, InterruptHandler_t h);
 
 // 设置中断描述符
 void IDT_setGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
@@ -126,6 +134,8 @@ void isr170(); // 0xAA
 void IRQ_handlerCall(InterruptFrame_t *pr);
 
 void enableIRQ(uint8_t irq);
+
+uint8_t idtflag(uint8_t istrap, uint8_t dpl);
 
 // 定义IRQ
 #define IRQ_OFFSET 32

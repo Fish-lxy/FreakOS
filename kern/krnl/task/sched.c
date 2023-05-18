@@ -27,47 +27,15 @@ void wakeupTask(Task_t *task);
 void testRunQueue();
 
 void schedule() {
-
-    // list_ptr_t *nnow, *ntemp;
-    // Task_t *nnext = NULL;
-    // Task_t *ntask = NULL;
-
-    // bool nintrflag;
-    // intr_save(nintrflag);
-    // {
-    //     nnow = &(CurrentTask->ptr);
-    //     ntemp = nnow;
-    //     while (1) {
-    //         ntemp = listGetNext(ntemp);
-    //         if (ntemp == &(TaskList.ptr)) {
-    //             continue;
-    //         }
-
-    //         ntask = lp2task(ntemp, ptr);
-    //         if (TaskCount != 1 && ntask->tid == 0) {
-    //             continue;
-    //         }
-    //         if (ntask->state != TASK_RUNNABLE) {
-    //             continue;
-    //         } else {
-    //             nnext = ntask;
-    //             break;
-    //         }
-    //     }
-    //     runTask(nnext);
-    // }
-    // intr_restore(nintrflag);
-
     // 时间片轮转RR
-    bool intr_flag;
     Task_t *next;
-    bool intrflag;
-    intr_save(intrflag);
+    bool intr_flag;
+    intr_save(intr_flag);
     {
         //sprintk("开始调度:\n");
 
         CurrentTask->need_resched = 0;// 令Current进程处于不需要调度的状态
-        // 如果当前进程依然是就绪态，将其置入就绪队列(有机会再被调度算法选出来)
+        // 如果当前进程依然是就绪态，将其置入就绪队列，使其有机会再被调度算法选出来
         if (CurrentTask->state == TASK_RUNNABLE) {
             if (CurrentTask != idle_task) {
                 enqueueRunQueue(&RunQueue, CurrentTask);
@@ -81,7 +49,7 @@ void schedule() {
             //sprintk(" 进程%d出队\n", CurrentTask->tid);
         }
         if (next == NULL) {
-            next = idle_task;// 没有找到任何一个就绪进程，则由idleproc获得CPU
+            next = idle_task;// 没有找到任何一个就绪进程，则由idle_task获得CPU
         }
         if (next != CurrentTask) {
             //sprintk("选择的进程:%d\n", next->tid);
@@ -91,7 +59,7 @@ void schedule() {
 
         //sprintk("调度结束\n");
     }
-    intr_restore(intrflag);
+    intr_restore(intr_flag);
     // printk("next%d ",next->tid);
 }
 void runTask(Task_t *next_task) {

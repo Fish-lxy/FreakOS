@@ -26,6 +26,7 @@ static uint32_t down(Semaphore_t *sem, uint32_t wait_state) {
             intr_restore(intr_flag);
             return 0;
         }
+        // 将当前进程加入等待队列
         waitAddCurrent(&(sem->wait_queue), wait, wait_state);
 #if DEBUG_SEM_SPRINTK == 1
         sprintk("sem %s:当前进程%d开始睡眠\n",
@@ -34,14 +35,16 @@ static uint32_t down(Semaphore_t *sem, uint32_t wait_state) {
     }
     intr_restore(intr_flag);
 
-    // 进行进程切换
-    schedule();
+    
+    schedule();// 进行进程调度
     // 当前进程开始睡眠
+    // 保持等待，直到其他进程调用up()，唤醒此进程，则此进程从此处继续
 
-    // 保持等待，直到其他进程调用up()，则信号量可用，当前进程被唤醒，从此处继续
+    // 当前进程被唤醒，从此处继续
     intr_save(intr_flag);
     {
-        waitDelCurrent(&(sem->wait_queue), wait); // 从等待队列中删去当前进程
+        // 从等待队列中删去当前进程
+        waitDelCurrent(&(sem->wait_queue), wait); 
     }
     intr_restore(intr_flag);
 
@@ -58,6 +61,7 @@ static void up(Semaphore_t *sem, uint32_t wait_state) {
     bool intr_flag;
     intr_save(intr_flag);
     {
+        // 在等待队列中取得队头的进程
         wait = waitlistGetFirst(&(sem->wait_queue));
         if (wait == NULL) {
             sem->value++;

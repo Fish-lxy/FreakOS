@@ -54,4 +54,22 @@ static inline void ClearBit(uint32_t *num, uint32_t pos){
     (*num) = (*num) & ~(1 << (pos));  
 }
 
+
+#define E_OK 0
+#define E_PNULL 1
+#define E_NOT_FILE 2
+#define E_NOT_DIR 3
+#define E_DENIED 4
+#define E_EXIST 5
+#define E_NOT_EXIST 6
+#define E_DISK_ERR 7
+#define E_INTERNAL_ERR 8
+#define E_NOT_DEV 9
+#define E_OP_NULL 10
+#define E_INVAL 11
+#define E_NOMEM 12
+#define E_KILLED 13
+#define E_INVAL_ELF 14
+#define E_UNKNOWN 255
+
 #endif

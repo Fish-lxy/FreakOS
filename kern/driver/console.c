@@ -8,7 +8,7 @@
 // 从0xb8000开始，每2个字节表示屏幕上显示的一个字符
 // 例如 0000 0111 0010 0000,0x720,0x7为黑底白字 0x20为空格
 
-static uint16_t *VideoAddr = (uint16_t *)(0xB8000 + KERNEL_OFFSET); //
+static uint16_t *VideoAddr = (uint16_t *)(0xB8000 + KERNEL_BASE); //
 static uint8_t CursorX = 0;
 static uint8_t CursorY = 0;
 

@@ -14,10 +14,10 @@ void blkdev_open(INode_t *inode, int flag) { return 0; }
 void blkdev_io(INode_t *inode, uint32_t secno, uint32_t nsec, char *buffer,
                uint32_t blen, bool write) {
     if (inode == NULL || buffer == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->inode_type != Dev_Type) {
-        return INODE_NOT_DEV;
+        return -INODE_NOT_DEV;
     }
     int ret;
     BlockDevice_t *dev = inode->devinode.blkdev;
@@ -29,7 +29,7 @@ void blkdev_io(INode_t *inode, uint32_t secno, uint32_t nsec, char *buffer,
     req.nsecs = nsec;
 
     if ((ret = diskIO_BCache(dev, &req)) != NULL) {
-        return INODE_INTERNAL_ERR;
+        return -INODE_INTERNAL_ERR;
     }
     return INODE_OK;
 }
@@ -47,7 +47,7 @@ static char *get_new_blk_name() {
 }
 static int blkdev_devinode_init(INode_t *inode, BlockDevice_t *blkdev) {
     if (inode == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     DevINode_t *devinode = &inode->devinode;
     devinode->blkdev = blkdev;
@@ -71,6 +71,7 @@ void blk_init_vdev() {
     }
 }
 
+// 块设备 INode 操作数组
 static const INodeOps_t blk_dev_op = {
     .inode_magic = INODE_OPS_MAGIC,
     .iop_lookup = NULL,

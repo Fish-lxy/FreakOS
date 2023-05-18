@@ -7,6 +7,8 @@
 #define VDEV_PNULL 1
 #define VDEV_TYPE_ERR 2
 #define VDEV_NAME_CHECK_ERR 3
+#define VDEV_NOT_EXIST 4
+#define VDEV_EXIST 5
 #define VDEV_INTERNAL_ERR 4
 
 
@@ -31,9 +33,13 @@ typedef struct vDev_t {
 
 void init_vDev();
 
+INode_t *vdev_get_root_inode(const char *name);
+
 int vdev_add_dev(const char *name, INode_t *inode, bool mountable);
 int vdev_add_fs(const char *name, FileSystem_t *fs);
 
 void test_vDev();
+
+void test_vdev_readline(char *out);
 
 #endif

@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+
 static inline int strlen(const char *src) {
     int length = 0;
     while (*src++)

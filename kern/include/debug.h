@@ -8,6 +8,8 @@
 //内核调试信息输出 为 1 则输出到串口
 #define DEBUG_ALL_SPRINTK 1
 
+#define DEBUG_KMALLOC_SPRINTK 0
+
 //内核信号量调试信息输出 为 1 则输出到串口
 #define DEBUG_SEM_SPRINTK 0
 

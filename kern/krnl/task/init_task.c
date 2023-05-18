@@ -1,31 +1,39 @@
 #include "bcache.h"
 #include "debug.h"
+#include "fat.h"
+#include "file.h"
 #include "gdt.h"
 #include "ide.h"
 #include "idt.h"
 #include "kbd.h"
+#include "kmalloc.h"
 #include "list.h"
+#include "mm.h"
+#include "partiton.h"
 #include "pmm.h"
 #include "sem.h"
 #include "string.h"
+#include "syscall.h"
 #include "task.h"
 #include "types.h"
+#include "vdev.h"
 #include "vfs.h"
 #include "vmm.h"
-#include "vdev.h"
-#include "fat.h"
-#include "partiton.h"
 
 volatile uint32_t sum = 0;
 Semaphore_t sem;
+extern uint8_t idtflag(uint8_t istrap, uint8_t dpl);
+
+int i;
 void testA() {
-    int i = 0;
-    // while (1) {
-    //     if (i % 25000000 == 0) {
-    //         printk("A");
-    //     }
-    //     i++;
-    // }
+    // printk("idtflag:%X\n",idtflag(FALSE, DPL_KERNEL));
+
+    //  while (1) {
+    //      if (i % 1000000 == 0) {
+    //          sprintk("B");
+    //      }
+    //      i++;
+    //  }
 
     // for(int i=0;i<200;i++){
     //     sum++;
@@ -38,14 +46,41 @@ void testA() {
 
     // acquireSem(&sem);
     // printk("second\n");
+
+    test_putc_syscall('A');
+
+    // printk("Physical Mem Test:\n");
+    // char* i = kmalloc(8);
+    // printk("alloc mem: %dB in 0x%08X\n",8,i);
+    // char* ii = kmalloc(16);
+    // printk("alloc mem: %dB in 0x%08X\n",16,ii);
+    // char* iii = kmalloc(32);
+    // printk("alloc mem: %dB in 0x%08X\n",32,iii);
+
+    // printk("free mem: %dB in 0x%08X\n",8,i);
+    // kfree(i,8);
+    // printk("free mem: %dB in 0x%08X\n",16,ii);
+    // kfree(ii,16);
+    // printk("free mem: %dB in 0x%08X\n",32,iii);
+    // kfree(iii,32);
 }
 void testB() {
-    int i = 0;
     // while (1) {
-    //     if (i % 25000000 == 0) {
-    //         printk("B");
-    //     }
-    //     i++;
+    //      if (i % 1000000 == 0) {
+    //          sprintk("A");
+    //      }
+    //      i++;
+    //  }
+    //test_file();
+
+    test_putc_syscall('B');
+
+    // char *str = kmalloc(sizeof(char) * 2048);
+    // memset(str, 0, 2048);
+    // while (1) {
+    //     printk("$ ");
+    //     test_vdev_readline(str);
+    //     printk("stdin:%s\n", str);
     // }
 
     // for(int i=0;i<200;i++){
@@ -77,7 +112,6 @@ int init_task_func(void *arg) {
     init_vDev();
 
     // createKernelThread(sync_bcache_task, NULL, 0);
-    // createKernelThread(testB, NULL, 0);
 
     // testBCache();
 
@@ -103,11 +137,21 @@ int init_task_func(void *arg) {
     sprintk("\n\nALL TEST:\n\n");
     printk("ALL TEST:\n");
 
-    testVFS();
-    //testFatInode();
+    test_vfs();
+    testFatInode();
 
     test_vDev();
 
+    test_vfslookup();
+    test_vfs_file();
+
+    //test_vma();
+    //test_pgfault();
+     test_file();
+
+    printk("\n");
+    createKernelThread(testA, NULL, 0);
+    createKernelThread(testB, NULL, 0);
     //-----------------------------------------------------------------------
     while (1) {
         asm("hlt");

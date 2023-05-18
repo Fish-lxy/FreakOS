@@ -7,6 +7,7 @@
 #include "pmm.h"
 #include "sched.h"
 #include "serial.h"
+#include "syscall.h"
 #include "task.h"
 #include "timer.h"
 #include "types.h"
@@ -26,14 +27,19 @@ void main() {
 
     initGDT();
     initIDT();
+    initSysCall();
+
+    initDebugSerial();
 
     initPMM();
-    initVMM();
+    initKernelPageTable();
 
+    //test_pgdir();
+    //while(1){}
     initTask();
     initTimer();
 
-    initDebugSerial();
+    
     
     sprintk("Loading FreakOS Kernel...\n");
 
@@ -45,7 +51,7 @@ void main() {
     // printKernelMemStauts();
 
     // asm volatile ("int $0x03");
-    // interruptHandlerRegister(3,int3);
+    // intrHandlerRegister(3,int3);
     // asm volatile ("int $0x03");
 
     // printk("%d\n",read_eflags());

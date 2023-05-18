@@ -1,6 +1,6 @@
 #include "bcache.h"
-#include "debug.h"
 #include "block.h"
+#include "debug.h"
 #include "fat.h"
 #include "fat_base.h"
 #include "inode.h"
@@ -15,10 +15,7 @@
 static const INodeOps_t fat_file_op;
 static const INodeOps_t fat_dir_op;
 
-
-
-
-static INodeOps_t *get_fat_inode_ops(FATBaseType_e type);
+static INodeOps_t *get_fat_inode_ops(FATINodeType_e type);
 static uint32_t getNewFatInodeId(FatFs_t *fatfs);
 static void fat_add_inode_list(FatFs_t *fatfs, FatINode_t *fat_inode);
 static void fat_del_inode_list(FatFs_t *fatfs, FatINode_t *fat_inode);
@@ -29,13 +26,13 @@ find_list_fatinode_with_internal_path_nolock(FatFs_t *fatfs,
                                              const char *inpath);
 static INode_t *fat_create_inode(FatFs_t *fatfs);
 static INode_t *construct_fatinode_info(INode_t *inode, FatFs_t *fatfs,
-                                        FATBaseType_e type, uint32_t flag,
+                                        FATINodeType_e type, uint32_t flag,
                                         char *inpath);
 INode_t *fat_find_inode(FatFs_t *fatfs, char *path);
 
 static INode_t *fat_create_inode2(FatFs_t *fatfs,
                                   FATBase_InodeData_u *base_data,
-                                  FATBaseType_e type);
+                                  FATINodeType_e type);
 static INode_t *fat_load_inode(FatFs_t *fatfs, uint32_t id);
 
 extern FileSystem_t *TempMainFS;
@@ -89,31 +86,32 @@ static char *bulid_internal_path(FatFs_t *fatfs, char *dest, char *path) {
 
 // 兼容层文件read/write
 static int fat_file_rw_nolock(FatINode_t *fat_inode, void *buf, uint32_t len,
-                              bool write) {
+                              uint32_t *copied, bool write) {
     int ret = 0;
-    int br = 0;
+
     FATBase_FILE *base_fp = &fat_inode->fatbase_data.file;
     if (write != TRUE) {
-        ret = fatbase_read(base_fp, buf, len, &br);
+        ret = fatbase_read(base_fp, buf, len, copied);
     } else {
-        ret = fatbase_write(base_fp, buf, len, &br);
+        ret = fatbase_write(base_fp, buf, len, copied);
     }
     return ret;
 }
-static int fat_file_rw(INode_t *inode, void *buf, uint32_t len, bool write) {
+static int fat_file_rw(INode_t *inode, void *buf, uint32_t len,
+                       uint32_t *copied, bool write) {
     int ret = 0;
     if (inode == NULL || buf == NULL) {
-        ret = INODE_PNULL;
+        ret = -INODE_PNULL;
         return ret;
     }
     if (inode->fatinode.fatinode_type != FAT_Type_File) {
-        ret = INODE_NOT_FILE;
+        ret = -INODE_NOT_FILE;
         return ret;
     }
 
     FatINode_t *fat_inode = &inode->fatinode;
     lockFatInode(fat_inode);
-    { ret = fat_file_rw_nolock(fat_inode, buf, len, write); }
+    { ret = fat_file_rw_nolock(fat_inode, buf, len, copied, write); }
     unlockFatInode(fat_inode);
     return ret;
 }
@@ -177,7 +175,7 @@ find_list_fatinode_with_internal_path_nolock(FatFs_t *fatfs,
 // 构造FatINode内部数据
 // Warning: inpath 指向的字符串必须在堆上分配，不允许传入栈上分配的临时变量
 static INode_t *construct_fatinode_info(INode_t *inode, FatFs_t *fatfs,
-                                        FATBaseType_e type, uint32_t flag,
+                                        FATINodeType_e type, uint32_t flag,
                                         char *inpath) {
     if (inode != NULL) {
         FatINode_t *fatinode = &inode->fatinode;
@@ -239,7 +237,7 @@ INode_t *fat_find_inode(FatFs_t *fatfs, char *path) {
 
     // 利用fat底层驱动的f_open，读取FATBase_InodeData
     FATBase_InodeData_u *base_node_data = &(inode->fatinode.fatbase_data);
-    FATBaseType_e type;
+    FATINodeType_e type;
     int open_ret = 0;
     int open_type = 0;
     if ((open_ret = fatbase_open(&(base_node_data->file), internal_path,
@@ -293,10 +291,10 @@ static void ________________space02________________();
 // 查找基于传入inode的相对路径的inode
 int fat_lookup(INode_t *inode, char *relative_path, INode_t **inode_out) {
     if (inode == NULL || relative_path == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->fatinode.fatinode_type != FAT_Type_Dir) {
-        return INDOE_NOT_DIR;
+        return -INDOE_NOT_DIR;
     }
 
     int ret = 0;
@@ -310,7 +308,7 @@ int fat_lookup(INode_t *inode, char *relative_path, INode_t **inode_out) {
 
     char *new_in_path; // in heap
     if ((new_in_path = (char *)kmalloc(INTERNAL_PATH_LEN)) == NULL) {
-        ret = INODE_INTERNAL_ERR;
+        ret = -INODE_INTERNAL_ERR;
         goto failed;
     }
     memset(new_in_path, 0, INTERNAL_PATH_LEN);
@@ -329,7 +327,7 @@ int fat_lookup(INode_t *inode, char *relative_path, INode_t **inode_out) {
 
     INode_t *out = NULL;
     if ((out = fat_find_inode(fatfs, new_in_path)) == NULL) {
-        ret = INODE_NOT_EXIST;
+        ret = -INODE_NOT_EXIST;
         goto failed_lookup_inode;
     }
     // sprintk("lookup03 ok:\n");
@@ -348,24 +346,24 @@ failed:
 
 // 打开/创建文件
 int fat_openfile(INode_t *inode, int flag) { return 0; }
-int fat_write(INode_t *inode, void *buf, uint32_t len) {
+int fat_write(INode_t *inode, void *buf, uint32_t len, uint32_t *copied) {
     int ret = 0;
-    ret = fat_file_rw(inode, buf, len, TRUE);
+    ret = fat_file_rw(inode, buf, len, copied, TRUE);
     return ret;
 }
 // 作为函数指针存入INode
-int fat_read(INode_t *inode, void *buf, uint32_t len) {
+int fat_read(INode_t *inode, void *buf, uint32_t len, uint32_t *copied) {
     int ret = 0;
-    ret = fat_file_rw(inode, buf, len, FALSE);
+    ret = fat_file_rw(inode, buf, len, copied, FALSE);
     return ret;
 }
 
 int fat_lseek(INode_t *inode, int32_t off) {
     if (inode == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->fatinode.fatinode_type != FAT_Type_File) {
-        return INODE_NOT_FILE;
+        return -INODE_NOT_FILE;
     }
     FatINode_t *fatinode = &inode->fatinode;
     FATBase_FILE *base_fp = &fatinode->fatbase_data.file;
@@ -378,10 +376,10 @@ int fat_lseek(INode_t *inode, int32_t off) {
 // 将改变文件大小为len
 int fat_truncate(INode_t *inode, uint32_t len) {
     if (inode == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->fatinode.fatinode_type != FAT_Type_File) {
-        return INODE_NOT_FILE;
+        return -INODE_NOT_FILE;
     }
     int ret = 0;
     FatINode_t *fatinode = &inode->fatinode;
@@ -410,10 +408,10 @@ int fat_truncate(INode_t *inode, uint32_t len) {
 }
 int fat_create(INode_t *inode, char *name, uint32_t mode) {
     if (inode == NULL || name == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->fatinode.fatinode_type != FAT_Type_Dir) {
-        return INDOE_NOT_DIR;
+        return -INDOE_NOT_DIR;
     }
     int ret = 0;
 
@@ -427,11 +425,11 @@ int fat_create(INode_t *inode, char *name, uint32_t mode) {
     char *new_in_path; // in heap
     FATBase_FILE *new_file;
     if ((new_in_path = (char *)kmalloc(INTERNAL_PATH_LEN)) == NULL) {
-        ret = INODE_INTERNAL_ERR;
+        ret = -INODE_INTERNAL_ERR;
         return ret;
     }
     if ((new_file = (FATBase_FILE *)kmalloc(sizeof(FATBase_FILE))) == NULL) {
-        ret = INODE_INTERNAL_ERR;
+        ret = -INODE_INTERNAL_ERR;
         goto failed_file_kalloc;
     }
     memset(new_in_path, 0, INTERNAL_PATH_LEN);
@@ -459,10 +457,10 @@ int fat_create(INode_t *inode, char *name, uint32_t mode) {
             ret = INODE_OK;
             goto ok;
         } else if (ret == FR_EXIST) {
-            ret = INODE_EXIST;
+            ret = -INODE_EXIST;
             goto ok_existed;
         } else {
-            ret == INODE_INTERNAL_ERR;
+            ret == -INODE_INTERNAL_ERR;
             goto failed_create;
         }
     }
@@ -482,10 +480,10 @@ out:
 int fat_opendir(INode_t *inode, int flag) { return 0; }
 int fat_readdir(INode_t *inode, INode_t **inode_out) {
     if (inode == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->fatinode.fatinode_type != FAT_Type_Dir) {
-        return INDOE_NOT_DIR;
+        return -INDOE_NOT_DIR;
     }
     int ret = 0;
     FatINode_t *fatinode = &inode->fatinode;
@@ -495,7 +493,7 @@ int fat_readdir(INode_t *inode, INode_t **inode_out) {
         // sprintk("readdir rewind 01\n");
         const char *inpath = fatinode->internal_path;
         if ((ret = fatbase_opendir(base_fp, inpath)) != FR_OK) {
-            ret = INODE_INTERNAL_ERR;
+            ret = -INODE_INTERNAL_ERR;
             return ret;
         }
         return ret;
@@ -503,7 +501,7 @@ int fat_readdir(INode_t *inode, INode_t **inode_out) {
 
     FATBase_FILINFO fatinfo;
     if (ret = fatbase_readdir(base_fp, &fatinfo) != FR_OK) {
-        ret = INODE_INTERNAL_ERR;
+        ret = -INODE_INTERNAL_ERR;
         return ret;
     }
     char *info_filename = fatinfo.fname;
@@ -520,10 +518,10 @@ int fat_readdir(INode_t *inode, INode_t **inode_out) {
 }
 int fat_mkdir(INode_t *inode, char *dir_name) { // 创建目录，在inode下创建新目录
     if (inode == NULL || dir_name == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->fatinode.fatinode_type != FAT_Type_Dir) {
-        return INDOE_NOT_DIR;
+        return -INDOE_NOT_DIR;
     }
     int ret = 0;
     FatINode_t *fatinode = &inode->fatinode;
@@ -535,7 +533,7 @@ int fat_mkdir(INode_t *inode, char *dir_name) { // 创建目录，在inode下创
     char *new_path; // in heap
     FATBase_FILE *new_file;
     if ((new_path = (char *)kmalloc(INTERNAL_PATH_LEN)) == NULL) {
-        ret = INODE_INTERNAL_ERR;
+        ret = -INODE_INTERNAL_ERR;
         return ret;
     }
     memset(new_path, 0, INTERNAL_PATH_LEN);
@@ -555,9 +553,9 @@ int fat_mkdir(INode_t *inode, char *dir_name) { // 创建目录，在inode下创
     if (ret == FR_OK) {
         ret = INODE_OK;
     } else if (ret == FR_EXIST) {
-        ret = INODE_EXIST;
+        ret = -INODE_EXIST;
     } else {
-        ret = INODE_INTERNAL_ERR;
+        ret = -INODE_INTERNAL_ERR;
     }
 
     kfree(new_path, INTERNAL_PATH_LEN);
@@ -567,7 +565,7 @@ int fat_mkdir(INode_t *inode, char *dir_name) { // 创建目录，在inode下创
 // 同步此INode的所有数据到磁盘，然后从内存中移除INode
 int fat_release(INode_t *inode) {
     if (inode == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     int ret;
 
@@ -581,7 +579,7 @@ int fat_release(INode_t *inode) {
         FATBase_DIR *base_fp = &fatinode->fatbase_data.dir;
         // do nothing;
     } else {
-        ret = INODE_INTERNAL_ERR;
+        ret = -INODE_INTERNAL_ERR;
         return ret;
     }
 
@@ -603,13 +601,13 @@ int fat_rename(INode_t *inode, char *new) {
 }
 int fat_stat(INode_t *inode, Stat_t *stat) {
     if (inode == NULL || stat == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     int ret = 0;
     FATBase_FILINFO file_info;
     const char *file_path = inode->fatinode.internal_path;
     if ((ret = fatbase_stat(file_path, &file_info)) != FR_OK) {
-        ret = INODE_INTERNAL_ERR;
+        ret = -INODE_INTERNAL_ERR;
         return ret;
     }
     stat->size = file_info.fsize;
@@ -625,10 +623,10 @@ int fat_stat(INode_t *inode, Stat_t *stat) {
 }
 int fat_sync(INode_t *inode) {
     if (inode == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->fatinode.fatinode_type != FAT_Type_File) {
-        return INODE_NOT_FILE;
+        return -INODE_NOT_FILE;
     }
     FatINode_t *fatinode = &inode->fatinode;
     FATBase_FILE *base_fp = &fatinode->fatbase_data.file;
@@ -646,9 +644,9 @@ int fat_sync(INode_t *inode) {
 }
 int fat_get_type(INode_t *inode, int32_t *type_out) {
     if (inode == NULL || type_out == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
-    FATBaseType_e base_type = inode->fatinode.fatinode_type;
+    FATINodeType_e base_type = inode->fatinode.fatinode_type;
     switch (base_type) {
     case FAT_Type_File:
         *type_out = INODE_TYPE_REGULAR;
@@ -657,12 +655,11 @@ int fat_get_type(INode_t *inode, int32_t *type_out) {
         *type_out = INODE_TYPE_DIR;
         return INODE_OK;
     default:
-        return INODE_INTERNAL_ERR;
+        return -INODE_INTERNAL_ERR;
     }
 }
 
-
-static INodeOps_t *get_fat_inode_ops(FATBaseType_e type) {
+static INodeOps_t *get_fat_inode_ops(FATINodeType_e type) {
     switch (type) {
     case FAT_Type_File:
         return &fat_file_op;
@@ -718,11 +715,15 @@ static const INodeOps_t fat_dir_op = {
 static void ________________TEST02________________();
 // TEST
 //------------------------------------------------------------------------------------------------
-static void printFatINode(INode_t *inode) {
+void printFatINode(INode_t *inode) {
 
     sprintk("print inode in 0x%08X:\n", inode);
     if (inode == NULL) {
         sprintk(" inode is null!\n");
+        return;
+    }
+    if (inode->inode_type != FAT_Type) {
+        sprintk("inode is not FAT_Type! type: %d:\n", inode->inode_type);
         return;
     }
     FatINode_t *fatinode = &inode->fatinode;
@@ -789,7 +790,8 @@ void read_sprintFatInodeContent(INode_t *inode) {
         int32_t fsize = fat_get_fsize(inode);
         char *buf2 = kmalloc(fsize + 1);
         memset(buf2, 0, fsize + 1);
-        int ret = fat_read(inode, buf2, 512);
+        int copied=0;
+        int ret = fat_read(inode, buf2, 512,&copied);
         fat_lseek(inode, 0);
 
         sprintk("read ret:%d fsize:%d\n", ret, fsize);
@@ -908,7 +910,8 @@ void testInodeRW() {
     strcpy(buf, "I'm file01");
     int buf_len = strlen(buf);
 
-    ret = fat_write(inode_rw, buf, buf_len);
+    int copied = 0;
+    ret = fat_write(inode_rw, buf, buf_len,&copied);
     fat_lseek(inode_rw, 0);
     sprintk("write ret:%d\nbuf:%s\n", ret, buf);
 
@@ -986,7 +989,7 @@ void testFatInode() {
     // testFatInodeInternalPath();
     // test_fat_inode();
     // testRootInode();
-    // testInodeRW();
+     testInodeRW();
     // testCreate();
     testMkdir();
     sprintk("\nFatInode Test OK\n");

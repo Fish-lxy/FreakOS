@@ -7,8 +7,8 @@
 #include "stdarg.h"						// 标准参数头文件.以宏的形式定义变量参数列表.主要说明了一个类型(va_list)和三个
 											// 宏(va_start,va_arg和va_end),vsprintf,vprintf,vfprintf.
 #include "string.h"							// 字符串头文件.主要定义了一些有关字符串操作的嵌入函数.
-/* we use this so that we can do without the ctype library */
-/* 我们使用下面的定义,这样我们就可以不使用ctype库了 */
+
+/* 使用下面的定义,这样可以不使用ctype库了 */
 #define is_digit(c)	((c) >= '0' && (c) <= '9')	// 判断字符c是否为数字字符.
 
 // 该函数将字符数字串转换成整数.输入是数字串指针的指针,返回是结果数值.另外指针将前移.

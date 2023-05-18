@@ -2,6 +2,7 @@
 #include "console.h"
 #include "cpu.h"
 #include "debug.h"
+#include "mm.h"
 #include "string.h"
 #include "types.h"
 
@@ -120,8 +121,8 @@ void initIDT() {
     IDT_setGate(46, (uint32_t)irq14, 0x08, 0x8E);
     IDT_setGate(47, (uint32_t)irq15, 0x08, 0x8E);
 
-    // 170 将来用于实现系统调用
-    IDT_setGate(170, (uint32_t)isr170, 0x08, 0x8E);
+    // 0xAA = 170 将来用于实现系统调用idtflag(TRUE, DPL_USER)
+    IDT_setGate(0xAA, (uint32_t)isr170, 0x08, 0x8E);
 
     // 更新设置中断描述符表
     flushIDT_s((uint32_t)&idt_ptr);
@@ -131,7 +132,6 @@ void initIDT() {
 // 设置中断描述符
 void IDT_setGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
     idt_entries[num].base_low = base & 0xFFFF;
-    idt_entries[num].base_high = (base >> 16) & 0xFFFF;
 
     idt_entries[num].seg_selector = sel;
     idt_entries[num].always0 = 0;
@@ -139,20 +139,20 @@ void IDT_setGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
     // 先留下 0x60 这个魔数，以后实现用户态时候
     // 这个与运算可以设置中断门的特权级别为 3
     idt_entries[num].flags = flags; // | 0x60
+
+    idt_entries[num].base_high = (base >> 16) & 0xFFFF;
 }
 
 // 调用 ISR 中断处理函数，由汇编调用
-// 由InterruptFrame_t
-// 中的中断号，执行interruptHandlers函数数组中对应的中断处理函数
+// 根据 InterruptFrame_t 中的中断号，执行 interruptHandlers 函数数组中对应的中断处理函数
 void ISR_handlerCall(InterruptFrame_t *pr) {
     // 由 InterruptFrame_t 中的中断号选择中断处理函数
     if (interruptHandlers[pr->int_no]) {
         interruptHandlers[pr->int_no](pr);
     } else {
-        printkColor("Interrupt unhandled! intcode : %d\n", TC_black, TC_red,
+        printkColor("\nInterrupt unhandled! intcode : %d\n", TC_black, TC_red,
                     pr->int_no);
-        while (1) {
-        }
+        haltSys();
     }
 }
 
@@ -171,19 +171,33 @@ void IRQ_handlerCall(InterruptFrame_t *pr) {
 
     if (interruptHandlers[pr->int_no]) {
         interruptHandlers[pr->int_no](pr);
+    } else {
+        //printkColor("\nInterrupt unhandled! intcode : %d\n", TC_black, TC_red,
+        //            pr->int_no);
+        //haltSys();
     }
 }
 
 // 注册一个中断处理函数
-void interruptHandlerRegister(uint8_t n, InterruptHandler_t h) {
+void intrHandlerRegister(uint8_t n, InterruptHandler_t h) {
     interruptHandlers[n] = h;
 }
 
 //
-void enableIRQ(uint8_t irq){//irq为IRQ号，从0开始
+void enableIRQ(uint8_t irq) { // irq为IRQ号，从0开始
     irq = irq - IRQ_OFFSET;
     uint16_t irq_mask = (inb(PIC2 + 1) << 8) + inb(PIC1 + 1);
     irq_mask &= ~(1 << irq);
     outb(PIC1 + 1, irq_mask);
     outb(PIC2 + 1, irq_mask >> 8);
+}
+uint8_t idtflag(uint8_t istrap, uint8_t dpl) {
+    IDT_Flag_t _flag;
+    IDT_Flag_t *flag = &_flag;
+    _flag.gd_type = istrap ? 0xf : 0xE;
+    _flag.gd_s = 0;
+    _flag.gd_dpl = dpl;
+    _flag.gd_p = 1;
+
+    return *(uint8_t *)flag;
 }

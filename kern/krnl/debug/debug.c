@@ -9,12 +9,12 @@
 #include "stdarg.h"
 
 extern int vsprintf(char *buf, const char *fmt, va_list args); // lib/vsprintf.c
-static ELF_t kernel_elf; // 内核ELF结构，跟踪栈帧用
+static DebugELF_t kernel_elf; // 内核ELF结构，跟踪栈帧用
 
 void initKernelELF_Info() {
     // consoleWriteStrColor("Init Debug Unit...", TC_black, TC_light_blue);
 
-    ELF_FromMultiBoot(GlbMbootPtr, &kernel_elf);
+    MultiBootGetELF(GlbMbootPtr, &kernel_elf);
 
     // consoleWriteStrColor("OK\n", TC_black, TC_yellow);
 }
@@ -126,12 +126,12 @@ void printStackTrace() {
 }
 void printKernelMemStauts() {
     uint32_t mmap_addr =
-        GlbMbootPtr->mmap_addr + KERNEL_OFFSET; // 分页后需要加上偏移
+        GlbMbootPtr->mmap_addr + KERNEL_BASE; // 分页后需要加上偏移
     uint32_t mmap_length = GlbMbootPtr->mmap_length;
 
     printk("Kernel Memory Stauts:\n");
-    printk("Kernel in pmemory start: 0x%08X\n", kern_start - KERNEL_OFFSET);
-    printk("Kernel in pmemory end:   0x%08X\n", kern_end - KERNEL_OFFSET);
+    printk("Kernel in pmemory start: 0x%08X\n", kern_start - KERNEL_BASE);
+    printk("Kernel in pmemory end:   0x%08X\n", kern_end - KERNEL_BASE);
     printk("Kernel in memory used:  %dB, %dKB\n\n",
            kern_end - kern_start + 1023, (kern_end - kern_start + 1023) / 1024);
 

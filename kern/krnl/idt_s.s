@@ -72,7 +72,7 @@ ISR_NOERRCODE 170 ;设定170号中断(0xAA)为系统调用
 [EXTERN ISR_handlerCall]
 ; 中断服务程序
 ISR_CommonStub:
-	;设置中断帧
+	;设置中断帧信息
 	pusha	; 顺序压入 eax, ecx, edx, ebx, esp, ebp, esi, edi
 	push ds	; 保存段描述符
 	push es
@@ -84,20 +84,24 @@ ISR_CommonStub:
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
-	;mov ss, ax
 	
-	push esp	; 压入函数参数，此时的 esp 寄存器的值等价于 InterruptFrame_t 结构体的指针
-	call ISR_handlerCall	; 在 C 代码里
+	push esp	; 压入函数参数，此时的 esp 的值等价于 InterruptFrame_t 结构体的指针
+	call ISR_handlerCall	; 跳转到 C 语言代码
 	add esp, 4 	; 清除压入的参数
 	
+	; 恢复中断前的寄存器信息
 	pop gs		; 恢复原来的段描述符
 	pop fs
 	pop es
 	pop ds
-	popa		; 弹出 edi, esi, ebp, esp, ebx, edx, ecx, eax
+	popa		; 顺序弹出 edi, esi, ebp, esp, ebx, edx, ecx, eax
 
 	add esp, 8	; 清理栈里的 error code 和 ISR
 	iret		; 出栈 CS, EIP, EFLAGS, SS, ESP
+				; iret  命令:
+    			;   1. 恢复 CS,IP
+    			;   2. 恢复标志寄存器
+    			;   3. 恢复 ESP,SS.(权限发生变化)
 .end:
 
 

@@ -98,7 +98,7 @@ void detectFS() {
     }
 }
 
-void testVFS() {
+void test_vfs() {
     printk("testVFS:File System:\n");
     printk("Files in Partiton 0:\n ");
     int re = ls("0:/");

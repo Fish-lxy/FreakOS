@@ -3,6 +3,16 @@
 
 #include "types.h"
 
+#define KBD_BUFF_LEN 512
+
+typedef struct KeyBoardBuffer_t{
+  uint8_t buffer[KBD_BUFF_LEN];
+  uint32_t rpos;
+  uint32_t wpos;
+}KeyBoardBuffer_t;
+
+
+
 // PC keyboard interface constants
 
 #define KBSTATP         0x64    // 键盘控制器状态端口(I)

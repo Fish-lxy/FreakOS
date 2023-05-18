@@ -2,10 +2,12 @@
 #define __WAIT_H
 
 #include "list.h"
-#include "task.h"
+//#include "task.h"
 #include "types.h"
 
-// struct Task_t;
+struct Task_t;
+typedef struct Task_t  Task_t;
+
 
 // 等待队列
 typedef struct Wait_t {

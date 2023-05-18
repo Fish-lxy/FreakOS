@@ -4,6 +4,8 @@
 
 void inode_ref_inc(INode_t *inode) { inode->ref++; }
 void inode_ref_dec(INode_t *inode) { inode->ref--; }
+void inode_open_inc(INode_t *inode){inode->open++;}
+void inode_open_dec(INode_t* inode){inode->open--;}
 INode_t *inode_alloc(INodeType_e type) {
     INode_t *inode = NULL;
     if ((inode = kmalloc(sizeof(INode_t))) != NULL) {

@@ -6,17 +6,23 @@
 #include "pmm.h"
 #include "types.h"
 #include "vmm.h"
+#include "file.h"
+
+
+#define EXEC_MAX_ARG_NUM    32
+#define EXEC_MAX_ARG_LEN    4095
 
 /* fork flags used in do_fork*/
 #define CLONE_VM 0x00000100     // set if VM shared between processes
 #define CLONE_THREAD 0x00000200 // thread group
+#define CLONE_FILES 0x00000800
 
 #define MAX_TASKS 4096
 
 #define ERR_NO_FREE_TASK -1
 #define ERR_NO_MEM -2
 
-#define KSTACKSIZE 8192
+
 
 typedef enum TaskState_e {
     TASK_UNINIT = 0,
@@ -54,21 +60,24 @@ typedef struct Task_t {
 
     TaskState_e state;
     uint32_t wait_state;
+    int exit_code;
 
     int runs;
     uint32_t *kstack;
 
     uint32_t flags;
     Task_t *parent;
-    mm_struct_t *mm;
+    MemMap_t *mm;
     Context_t context;
     InterruptFrame_t *_if;
     uint32_t cr3;
 
     uint32_t time_slice;
     volatile bool need_resched;
-
     list_ptr_t run_queue_ptr;
+
+    FileStruct_t* files;
+
     list_ptr_t ptr;
 } Task_t;
 
@@ -91,4 +100,6 @@ extern uint32_t TaskCount;
 void initTask();
 int32_t createKernelThread(int (*func)(void*), void* arg, uint32_t clone_flags);
 
+void do_exit(int err_code);
+int do_execve(const char *name, int argc, const char **argv);
 #endif

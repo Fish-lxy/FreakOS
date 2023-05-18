@@ -48,6 +48,13 @@ static inline void sti(void) { asm volatile("sti"); }
 // 屏蔽中断
 static inline void cli(void) { asm volatile("cli" ::: "memory"); }
 
+static inline void haltSys(void) {
+    cli();
+    while (1) {
+        asm("hlt");
+    }
+}
+
 // 装载任务状态段寄存器TR
 static inline void ltr(uint16_t sel) {
     asm volatile("ltr %0" ::"r"(sel) : "memory");
@@ -91,6 +98,11 @@ static inline uint32_t read_eflags(void) {
 
 static inline void write_eflags(uint32_t eflags) {
     asm volatile("pushl %0; popfl" ::"r"(eflags));
+}
+
+// 刷新页表缓存，使包含addr的页对应的TLB项失效
+static inline void invlpg(uint32_t addr) {
+    asm volatile("invlpg (%0)" ::"r"(addr) : "memory");
 }
 
 #endif

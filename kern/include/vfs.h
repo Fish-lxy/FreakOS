@@ -21,6 +21,15 @@
 
 // } FS_t;
 
+#define VFS_OK 0
+#define VFS_INVAL 1
+#define VFS_INVAL_OP 2
+#define VFS_NOT_EXIST 3
+#define VFS_EXIST 4
+#define VFS_OP_FAILED 5
+#define VFS_PNULL 6
+#define VFS_MEM_ERR 7;
+
 struct FatFs_t;
 typedef struct FatFs_t FatFs_t;
 struct INode_t;
@@ -57,6 +66,23 @@ void detectFS();
 
 void fs_init_vdev();
 
-void testVFS();
+
+//vfs_pwd.c
+int vfs_get_cur_inode(INode_t **inode_out);
+int vfs_set_cur_inode(INode_t *inode);
+int vfs_change_cur_pwd(char* path);
+
+//vfs_lookup.c
+int vfs_lookup(char* path,INode_t **inode);
+int vfs_lookup_parent(char *path, INode_t **vdev_inode_out, char **endp);
+
+//vfs_file.c
+int vfs_open(char *path, uint32_t open_flag, INode_t **inode_out);
+int vfs_close(INode_t *inode);
+
+//test
+void test_vfs();
+void test_vfslookup();
+void test_vfs_file();
 
 #endif

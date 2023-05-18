@@ -33,8 +33,10 @@ typedef struct _FILINFO FATBase_FILINFO;
 #define INODE_DISK_ERR 7
 #define INODE_INTERNAL_ERR 8
 #define INODE_NOT_DEV 9
+#define INODE_OP_NULL 10
 #define INODE_UNKNOWN 255
 
+//iop_create专用
 #define INODE_CREATE_MASK 0xFF
 #define INODE_CREATE_NEW 0x0
 #define INODE_CREATE_EXIST 0x1
@@ -45,8 +47,8 @@ typedef struct INodeOps_t {
     int32_t inode_magic;
     int (*iop_lookup)(INode_t *inode, char *relative_path, INode_t **inode_out);
     int (*iop_open)(INode_t *inode, int flag);
-    int (*iop_read)(INode_t *inode, char *buffer, uint32_t len);
-    int (*iop_write)(INode_t *inode, char *buffer, uint32_t len);
+    int (*iop_read)(INode_t *inode, char *buffer, uint32_t len,uint32_t *copied);
+    int (*iop_write)(INode_t *inode, char *buffer, uint32_t len,uint32_t *copied);
     int (*iop_lseek)(INode_t *inode, int32_t off);
     int (*iop_truncate)(INode_t *inode, uint32_t len);
     int (*iop_create)(INode_t *inode, char *name, uint32_t mode);
@@ -87,6 +89,9 @@ typedef struct Stat_t {
 
 } Stat_t;
 
+
+void inode_open_inc(INode_t *inode);
+void inode_open_dec(INode_t* inode);
 void inode_ref_inc(INode_t *inode);
 void inode_ref_dec(INode_t *inode);
 INode_t *inode_alloc(INodeType_e type);

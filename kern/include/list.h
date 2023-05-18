@@ -14,7 +14,7 @@ struct list_ptr_t {
 } list_ptr_t;
 
 static inline void initList(list_ptr_t* elem) __attribute__((always_inline));
-static inline void listAdd(list_ptr_t* listelem, list_ptr_t* new) __attribute__((always_inline));
+static inline void listAdd(list_ptr_t* list, list_ptr_t* new) __attribute__((always_inline));
 static inline void listAddTail(list_ptr_t* listelem, list_ptr_t* new) __attribute__((always_inline));
 static inline void listAddBefore(list_ptr_t* listelem, list_ptr_t* elem) __attribute__((always_inline));
 static inline void listAddAfter(list_ptr_t* listelem, list_ptr_t* elem) __attribute__((always_inline));
@@ -32,8 +32,8 @@ static inline void initList(list_ptr_t* elem) {
 }
 
 //头插法，新元素将插入在头节点之后
-static inline void listAdd(list_ptr_t* listelem, list_ptr_t* new) {
-    listAddAfter(listelem, new);
+static inline void listAdd(list_ptr_t* list, list_ptr_t* new) {
+    listAddAfter(list, new);
 }
 //尾插
 static inline void listAddTail(list_ptr_t* listelem, list_ptr_t* new) {

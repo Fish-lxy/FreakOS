@@ -6,14 +6,14 @@
 
 static const INodeOps_t stdout_dev_op;
 
-void stdout_open(INode_t *inode, int flag) { return 0; }
-void stdout_io(INode_t *inode, uint32_t secno, uint32_t nsec, char *buffer,
+int stdout_open(INode_t *inode, int flag) { return 0; }
+int stdout_io(INode_t *inode, uint32_t secno, uint32_t nsec, char *buffer,
                uint32_t blen, bool write) {
     if (inode == NULL || buffer == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     if (inode->inode_type != Dev_Type) {
-        return INODE_NOT_DEV;
+        return -INODE_NOT_DEV;
     }
     // secno,nsec被忽略
     if (write != FALSE) {
@@ -23,15 +23,19 @@ void stdout_io(INode_t *inode, uint32_t secno, uint32_t nsec, char *buffer,
         return INODE_OK;
     }
 
-    return INODE_OK;
+    return -INODE_DENIED;
 }
+int stdout_write(INode_t *inode, char *buffer, uint32_t len,uint32_t copied) {
+    return stdout_io(inode, 0, 0, buffer, len, TRUE);
+}
+
 int stdout_ioctl(INode_t *inode, int ctrl) { return 0; }
 
 static INodeOps_t *get_stdout_dev_op() { return &stdout_dev_op; }
 
 static void stdout_devinode_init(INode_t *inode) {
     if (inode == NULL) {
-        return INODE_PNULL;
+        return -INODE_PNULL;
     }
     DevINode_t *devinode = &inode->devinode;
     devinode->dev_type = CharDevice;
@@ -52,7 +56,7 @@ static const INodeOps_t stdout_dev_op = {
     .iop_lookup = NULL,
     .iop_open = stdout_open,
     .iop_read = NULL,
-    .iop_write = NULL,
+    .iop_write = stdout_write,
     .iop_lseek = NULL,
     .iop_truncate = NULL,
     .iop_create = NULL,

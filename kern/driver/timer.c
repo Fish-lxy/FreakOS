@@ -23,7 +23,7 @@ void timerCallBack() {
     }
 }
 void initTimer() {
-    interruptHandlerRegister(IRQ0, timerCallBack);
+    intrHandlerRegister(IRQ0, timerCallBack);
 
     // Intel 8253/8254 PIT芯片 I/O端口地址范围是40h~43h
     // 输入频率为 1193180，FREQUENCY 即每秒中断次数
