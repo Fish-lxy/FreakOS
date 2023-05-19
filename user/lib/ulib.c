@@ -7,6 +7,7 @@ void exit(int err_code) {
     while (1) {
     }
 }
+//子进程中返回0 父进程中返回子进程tid
 int fork(void) {
     //
     return sys_fork();

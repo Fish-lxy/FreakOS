@@ -78,3 +78,7 @@ int sys_fsync(int fd) {
     //
     return syscall(SYS_fsync, fd);
 }
+
+int sys_temp_ls(){
+    return syscall(SYS_temp_ls);
+}

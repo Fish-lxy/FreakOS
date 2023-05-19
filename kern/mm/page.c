@@ -107,7 +107,7 @@ int copy_range(PGD_t *to, PGD_t *from, uint32_t start, uint32_t end,
             if ((nptep = get_pte(to, start, 1)) == NULL) {
                 return -E_NOMEM;
             }
-            uint32_t perm = (*ptep & PTE_PAGE_USER);
+            uint32_t perm = (*ptep & PTE_USER);
 
             PhyPageBlock_t *page = pte2page(*ptep);
 
@@ -214,7 +214,7 @@ void sprint_pgdir(PGD_t *pgdir) {
             PTE_t *ptep = PGD_ADDR(pgdir[i]) + KERNEL_BASE;
             for (int i = 0; i < 5; i++) {
                 if (ptep[i] != 0) {
-                    sprintk(" pte[%d]:0x%08X,%s,va:0x%08X-0x%08X\n", i, ptep[i],
+                    sprintk(" pte[%d]:in0x%08X,%s,va:0x%08X-0x%08X\n", i, ptep,
                             perm2str(ptep[i]), ptep[i], ptep[i] + PGSIZE - 1);
                 }
             }
@@ -222,7 +222,23 @@ void sprint_pgdir(PGD_t *pgdir) {
     }
     sprintk("\n--- 页表信息 end ---\n\n");
 }
-
+void sprint_cur_pgdir() {
+    PGD_t *pgdir = CurrentTask->cr3 + KERNEL_BASE;
+    sprintk("\n--- 页表信息 begin ---\n");
+    for (int i = 0; i < PGD_ECOUNT; i++) {
+        if (pgdir[i] != 0) {
+            sprintk("pgd[%d]:0x%08X,%s\n", i, pgdir[i], perm2str(pgdir[i]));
+            PTE_t *ptep = PGD_ADDR(pgdir[i]) + KERNEL_BASE;
+            for (int i = 0; i < 5; i++) {
+                if (ptep[i] != 0) {
+                    sprintk(" pte[%d]:in0x%08X,%s,va:0x%08X-0x%08X\n", i, ptep,
+                            perm2str(ptep[i]), ptep[i], ptep[i] + PGSIZE - 1);
+                }
+            }
+        }
+    }
+    sprintk("\n--- 页表信息 end ---\n\n");
+}
 void test_pgdir(void) {
     sprintk("\nTEST VMM PGDIR:\n");
     int s = 1;

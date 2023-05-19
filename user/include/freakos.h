@@ -30,6 +30,7 @@
 #define SYS_getcwd          121
 #define SYS_getdirentry     128
 #define SYS_dup             130
+#define SYS_temp_ls 255
 
 int sys_putc(int c);
 

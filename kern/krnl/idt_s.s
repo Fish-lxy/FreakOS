@@ -88,7 +88,7 @@ ISR_CommonStub:
 	
 	push esp	; 压入函数参数，此时的 esp 的值等价于 InterruptFrame_t 结构体的指针
 	call IntrHandlerCall	; 跳转到 C 语言代码
-	add esp, 4 	; 清除压入的参数
+	pop esp 	; 清除压入的参数
 	
 	; 恢复中断前的寄存器信息
 	pop gs		; 恢复原来的段描述符
@@ -155,7 +155,7 @@ IRQ_CommonStub:
     
     push esp	; 压入函数参数，此时的 esp 寄存器的值等价于 InterruptFrame_t 结构体的指针
     call IntrHandlerCall
-    add esp, 4 	; 清除压入的参数
+    pop esp 	; 清除压入的参数
 
 	pop gs		; 恢复原来的段描述符
 	pop fs

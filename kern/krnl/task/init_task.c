@@ -135,8 +135,8 @@ int init_task_func(void *arg) {
     printk("OK.\n");
 
     //-----TEST-------------------------------------------------------------
-    sprintk("\n\nALL TEST:\n\n");
-    printk("ALL TEST:\n");
+    //sprintk("\n\nALL TEST:\n\n");
+    //printk("ALL TEST:\n");
 
     //test_vfs();
     //testFatInode();
@@ -150,13 +150,13 @@ int init_task_func(void *arg) {
     //test_pgfault();
      //test_file();
 
-    printk("\n");
-    createKernelThread(user_task, NULL, 0);
     //createKernelThread(testB, NULL, 0);
-
-    
     //-----------------------------------------------------------------------
-    while (1) {
-        asm("hlt");
+
+    printk("\nStart user task...\n");
+    createKernelThread(user_task, NULL, 0);
+    // 作为所有子进程的父进程,清理所有子进程资源
+    while (do_wait(0, NULL) == 0) { 
+        schedule();
     }
 }

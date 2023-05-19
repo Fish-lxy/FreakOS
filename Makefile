@@ -19,7 +19,7 @@ update:
 	sudo losetup /dev/loop1 ./disk.img -o 1048576
 	sudo mount /dev/loop1 /mnt/kernel
 	sudo cp kern/kernel /mnt/kernel/kernel
-	sudo cp user/user.out /mnt/kernel/user
+	sudo cp user/out/* /mnt/kernel/user
 	sync
 	sudo umount /mnt/kernel
 	sudo losetup -d /dev/loop1

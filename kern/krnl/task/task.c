@@ -28,7 +28,7 @@ static uint32_t get_new_tid();
 static int32_t setupNewKstack(Task_t *task);
 static void freeKstack(Task_t *task);
 
-static Task_t* find_task(int tid);
+static Task_t *find_task(int tid);
 
 void kernel_thread_entry_s();
 void fork_return_s(InterruptFrame_t *_if);
@@ -140,8 +140,8 @@ char *getTaskName(Task_t *task) {
     memset(name, 0, sizeof(name));
     return memcpy(name, task->name, TASK_NAME_LEN);
 }
-static void add_task(Task_t* task){
-    listAdd( &TaskList.ptr,&(task->ptr));
+static void add_task(Task_t *task) {
+    listAdd(&TaskList.ptr, &(task->ptr));
     task->yptr = NULL;
     if ((task->optr = task->parent->cptr) != NULL) {
         task->optr->yptr = task;
@@ -161,12 +161,12 @@ static void del_task(Task_t *task) {
     }
     TaskCount--;
 }
-static Task_t* find_task(int tid){
-    list_ptr_t* i;
-    list_ptr_t* list = &TaskList.ptr;
-    listForEach(i,list){
-        Task_t* task = lp2task(i,ptr);
-        if(tid == task->tid){
+static Task_t *find_task(int tid) {
+    list_ptr_t *i;
+    list_ptr_t *list = &TaskList.ptr;
+    listForEach(i, list) {
+        Task_t *task = lp2task(i, ptr);
+        if (tid == task->tid) {
             return task;
         }
     }
@@ -239,7 +239,7 @@ int32_t do_fork(uint32_t clone_flags, uint32_t stack, InterruptFrame_t *_if) {
     wakeupTask(task);
 
     // 子进程不会执行至此
-    ret = task->tid;// 向父进程返回新的子进程的 pid
+    ret = task->tid; // 向父进程返回新的子进程的 pid
 
 out:
     return ret;
@@ -398,7 +398,7 @@ int do_exit(int err_code) {
             if ((ptask->optr = init_task->cptr) != NULL) {
                 init_task->cptr->yptr = ptask;
             }
-           ptask->parent = init_task;
+            ptask->parent = init_task;
             init_task->cptr = ptask;
             if (ptask->state == TASK_ZOMBIE) {
                 if (init_task->wait_state == WT_CHILD) {
@@ -673,12 +673,27 @@ int do_execve(const char *name, int argc, const char **argv) {
     sprintk("e3\n");
     path = argv[0];
     unlock_mm(mm);
+
+    // int fd;
+    // if ((ret = fd = sysfile_open(path, OPEN_READ)) < 0) {
+    //     sprintk("execve open failed!\n");
+    //     goto failed_open;
+    // }else{
+    //     sprintk("e31\n");
+    //     sysfile_close(fd);
+    // }
+
+    sprintk("e32\n");
     files_closeall(CurrentTask->files);
-    sprintk("e4\n");
-    int fd;
+    sprintk("e33:closeall\n");
+
+    int fd = -1;
     if ((ret = fd = sysfile_open(path, OPEN_READ)) < 0) {
-        goto execve_exit;
+        sprintk("execve open failed!\n");
+        goto execve_do_exit;
     }
+    sprintk("e4\n");
+
     sprintk("e5\n");
     if (mm != NULL) {
         lcr3(kernel_cr3);
@@ -693,15 +708,18 @@ int do_execve(const char *name, int argc, const char **argv) {
     sprintk("e6\n");
 
     if ((ret = load_icode(fd, argc, kargv)) != 0) {
-        goto execve_exit;
+        goto execve_do_exit;
     }
     sprintk("e7\n");
     put_kargv(argc, kargv);
     setTaskName(CurrentTask, local_name);
     sprintk("e8\n");
     return 0;
+failed_open:
+    put_kargv(argc, kargv);
+    return -E_NOT_EXIST;
 
-execve_exit:
+execve_do_exit:
     put_kargv(argc, kargv);
     do_exit(ret);
     panic("already exit.");
@@ -729,7 +747,7 @@ int exec_user(const char *name, const char **argv) {
 
 void test_user() {
     sprintk("\n-----------USER TEST------- -\n");
-    KERNEL_EXECVE("/fs0/user/user.out");
+    KERNEL_EXECVE("/fs0/user/sh");
     // sprintk("\n-----------USER TEST END------- -\n");
 }
 
@@ -790,9 +808,7 @@ found:
         *code_store = task->exit_code;
     }
     intr_save(intr_flag);
-    {
-        del_task(task);
-    }
+    { del_task(task); }
     intr_restore(intr_flag);
     freeKstack(task);
     kfree(task, sizeof(Task_t));

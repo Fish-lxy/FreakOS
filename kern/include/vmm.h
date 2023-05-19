@@ -92,6 +92,7 @@ void page_remove(PGD_t *pgdir, uint32_t va);
 int page_insert(PGD_t *pgdir, PhyPageBlock_t *page, uint32_t la, uint32_t perm);
 PhyPageBlock_t *pgdir_alloc_page(PGD_t *pgdir, uint32_t la, uint32_t perm);
 void sprint_pgdir(PGD_t *pgdir);
+void sprint_cur_pgdir();
 void test_pgdir();
 
 //

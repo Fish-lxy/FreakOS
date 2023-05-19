@@ -208,7 +208,9 @@ void IntrHandlerCall(InterruptFrame_t *_if) {
         bool in_kernel = isIntrInKernel(_if);
 
         dispatchIntr(_if);
+        //sprintk("ebp:0x%08X\n",_if->ebp);
         CurrentTask->_if = old_if;
+        //sprintk("old ebp:0x%08X\n",CurrentTask->_if->ebp);
 
         // 只有用户态进程可以抢占.内核进程不可抢占
         if (!in_kernel) {

@@ -7,6 +7,8 @@
 #include "sysfile.h"
 #include "string.h"
 #include "task.h"
+#include "vmm.h"
+#include "fat_base.h"
 #include "types.h"
 
 void syscall(InterruptFrame_t *_if);
@@ -39,6 +41,7 @@ static int sys_getpid(uint32_t arg[]) { return CurrentTask->tid; }
 static int sys_putc(uint32_t arg[]) {
     int c = (int)arg[0];
     consolePutc(c);
+    //sprint_cur_pgdir();
     return 0;
 }
 static int sys_open(uint32_t arg[]) {
@@ -84,12 +87,18 @@ static int sys_fsync(uint32_t arg[]) {
     return sysfile_fsync(fd);
 }
 
+
+static int sys_temp_ls(uint32_t arg[]) {
+    ls("0:/");
+    return 0;
+}
+
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit] sys_exit,   [SYS_fork] sys_fork,     [SYS_wait] sys_wait,
     [SYS_exec] sys_exec,   [SYS_getpid] sys_getpid, [SYS_putc] sys_putc,
     [SYS_open] sys_open,   [SYS_close] sys_close,   [SYS_read] sys_read,
     [SYS_write] sys_write, [SYS_seek] sys_seek,     [SYS_fstat] sys_fstat,
-    [SYS_fsync] sys_fsync,
+    [SYS_fsync] sys_fsync, [SYS_temp_ls] sys_temp_ls,
 };
 
 #define NUM_SYSCALLS ((sizeof(syscalls)) / (sizeof(syscalls[0])))
@@ -100,8 +109,8 @@ void syscall(InterruptFrame_t *_if) {
 
     uint32_t arg[MAX_ARGS];
     int num = tf->eax;
-    sprintk("-----syscall----\n no:%d, tid = %d, taskname = %s.\n", num,
-            CurrentTask->tid, CurrentTask->name);
+    // sprintk("-----syscall----\n no:%d, tid = %d, taskname = %s.\n", num,
+    //         CurrentTask->tid, CurrentTask->name);
     if (num >= 0 && num < NUM_SYSCALLS) {
         if (syscalls[num] != NULL) {
             arg[0] = tf->edx;

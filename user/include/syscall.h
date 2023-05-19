@@ -19,4 +19,6 @@ int sys_seek(int fd, int32_t pos, int whence);
 int sys_fstat(int fd, Stat_t *stat);
 int sys_fsync(int fd);
 
+int sys_temp_ls();
+
 #endif
