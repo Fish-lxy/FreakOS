@@ -270,6 +270,22 @@ failed:
     file_open_dec(file);
     return ret;
 }
+int file_fstat(int fd, Stat_t *stat) {
+    int ret;
+    File_t *file = find_file_with_fd(fd);
+    if (file == NULL) {
+        ret = -FILE_INVAL;
+        return ret;
+    }
+    if (file->inode->ops->iop_stat == NULL) {
+        ret = -FILE_INVAL_OP;
+        return ret;
+    }
+    file_open_inc(file);
+    ret = file->inode->ops->iop_stat(file->inode, stat);
+    file_open_dec(file);
+    return ret;
+}
 
 int file_fsync(int fd) {
     int ret;
@@ -355,8 +371,8 @@ void files_closeall(FileStruct_t *files) {
         }
         file = NULL;
 
-        // listDel(i);
-        // kfree(lp2vma(i, ptr), sizeof(VirtMemArea_t));
+        listDel(i);
+        kfree(lp2vma(i, ptr), sizeof(VirtMemArea_t));
     }
 }
 
@@ -428,7 +444,7 @@ void test_file_open() {
     sprintk("TEST FILE OPEN:\n");
     int ret = file_open("/stdin", OPEN_READ);
     ret = file_open("/stdout", OPEN_WRITE);
-    //ret = file_open("/fs0/hello", OPEN_WRITE | OPEN_READ | OPEN_CREATE);
+    // ret = file_open("/fs0/hello", OPEN_WRITE | OPEN_READ | OPEN_CREATE);
     sprintk("open ret:%d\n\n", ret);
     // ret = file_open("/fs0/newfile",OPEN_RW);
     sprintCurFiles();
@@ -458,14 +474,14 @@ void test_regularfile_rw() {
     int fd = file_open("/fs0/hello.txt", OPEN_RW);
     ret = file_write(fd, str, len, &copied);
     sprintk(" w ret:%d\n", ret);
-    ret = file_seek(fd, 0,LSEEK_SET);
+    ret = file_seek(fd, 0, LSEEK_SET);
     sprintk(" w ret:%d\n", ret);
 
     sprintk(" file content:\n");
     char c;
     for (int i = 0; i < 5; i++) {
         ret = file_read(fd, &c, 1, &copied);
-        //sprintk(" r ret:%d\n", ret);
+        // sprintk(" r ret:%d\n", ret);
         sprintk("%c", c);
     }
     file_fsync(fd);

@@ -1,4 +1,4 @@
-all: kernel 
+all: kernel user update
 
 
 .PHONY:kernel
@@ -14,9 +14,20 @@ user:
 	@echo "\033[32mComplie User Program OK. \033[0m"
 
 
+.PHONY:update
+update:
+	sudo losetup /dev/loop1 ./disk.img -o 1048576
+	sudo mount /dev/loop1 /mnt/kernel
+	sudo cp kern/kernel /mnt/kernel/kernel
+	sudo cp user/user.out /mnt/kernel/user
+	sync
+	sudo umount /mnt/kernel
+	sudo losetup -d /dev/loop1
+
 .PHONY:clean
 clean:
 	cd kern && $(MAKE) clean
+	cd user && $(MAKE) clean
 	
 .PHONY:mount
 mount:
@@ -40,6 +51,6 @@ run2:
 
 .PHONY:debug
 debug:
-	qemu-system-x86_64 -S -s -m 32m -hda disk.img -boot c &
+	qemu-system-i386 -S -s -m 32m -hda disk.img -boot c &
 	sleep 1
-	cgdb -x scripts/gdbinit
+	gdb -x gdbinit

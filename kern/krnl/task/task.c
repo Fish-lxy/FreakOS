@@ -12,6 +12,7 @@
 #include "pmm.h"
 #include "sched.h"
 #include "string.h"
+#include "syscall.h"
 #include "sysfile.h"
 #include "types.h"
 #include "vmm.h"
@@ -23,9 +24,11 @@ void initTask();
 static Task_t *allocTask();
 static char *setTaskName(Task_t *task, const char *name);
 static char *getTaskName(Task_t *task);
-static uint32_t getNewPid();
+static uint32_t get_new_tid();
 static int32_t setupNewKstack(Task_t *task);
 static void freeKstack(Task_t *task);
+
+static Task_t* find_task(int tid);
 
 void kernel_thread_entry_s();
 void fork_return_s(InterruptFrame_t *_if);
@@ -39,7 +42,7 @@ static int copy_files(uint32_t clone_flags, Task_t *task);
 static void put_files(Task_t *task);
 
 int32_t copy_task(Task_t *task, uint32_t esp, InterruptFrame_t *_if);
-void do_exit(int err_code);
+int do_exit(int err_code);
 static void forkret(void);
 
 Task_t *CurrentTask;
@@ -82,9 +85,10 @@ void initTask() {
     TaskCount++;
     CurrentTask = idle_task;
 
-    int tid = createKernelThread(init_task_func, "Hello, world!", 0);
+    int init_tid = createKernelThread(init_task_func, "Hello, world!", 0);
+    init_task = find_task(init_tid);
 
-    if (tid < 0) {
+    if (init_tid < 0) {
         panic("create init process failed.");
     }
 }
@@ -103,6 +107,7 @@ Task_t *allocTask() {
         task->runs = 0;
         task->kstack = 0;
         task->parent = NULL;
+        task->cptr = task->optr = task->yptr = NULL;
         task->mm = NULL;
         memset(&(task->context), 0, sizeof(Context_t));
         task->_if = NULL;
@@ -122,7 +127,7 @@ static int32_t setupNewKstack(Task_t *task) {
         task->kstack = (uint32_t *)stack;
         return 0;
     }
-    return ERR_NO_MEM;
+    return E_NOMEM;
 }
 static void freeKstack(Task_t *task) { kfree(task->kstack, KSTACKSIZE); }
 
@@ -135,8 +140,40 @@ char *getTaskName(Task_t *task) {
     memset(name, 0, sizeof(name));
     return memcpy(name, task->name, TASK_NAME_LEN);
 }
+static void add_task(Task_t* task){
+    listAdd( &TaskList.ptr,&(task->ptr));
+    task->yptr = NULL;
+    if ((task->optr = task->parent->cptr) != NULL) {
+        task->optr->yptr = task;
+    }
+    task->parent->cptr = task;
+    TaskCount++;
+}
+static void del_task(Task_t *task) {
+    listDel(&(task->ptr));
+    if (task->optr != NULL) {
+        task->optr->yptr = task->yptr;
+    }
+    if (task->yptr != NULL) {
+        task->yptr->optr = task->optr;
+    } else {
+        task->parent->cptr = task->optr;
+    }
+    TaskCount--;
+}
+static Task_t* find_task(int tid){
+    list_ptr_t* i;
+    list_ptr_t* list = &TaskList.ptr;
+    listForEach(i,list){
+        Task_t* task = lp2task(i,ptr);
+        if(tid == task->tid){
+            return task;
+        }
+    }
+    return NULL;
+}
 
-uint32_t getNewPid() {
+uint32_t get_new_tid() {
     static uint32_t newestPid = 0;
 
     newestPid = TaskCount - 1;
@@ -166,25 +203,25 @@ int32_t do_fork(uint32_t clone_flags, uint32_t stack, InterruptFrame_t *_if) {
     // printk("Stage11_fork\n");
     Task_t *task;
     if (TaskCount >= MAX_TASKS) {
-        return ERR_NO_FREE_TASK;
+        return -E_NO_FREE_TASK;
     }
     task = allocTask();
     if (task == NULL) {
-        return ERR_NO_MEM;
+        return -E_NOMEM;
     }
 
     int ret;
     task->parent = CurrentTask;
     if (setupNewKstack(task) != 0) {
-        ret = ERR_NO_MEM;
+        ret = -E_NOMEM;
         goto failed_and_clean_task;
     }
     if (copy_files(clone_flags, task) != 0) {
-        ret = ERR_NO_MEM;
+        ret = -E_NOMEM;
         goto failed_and_clean_kstack;
     }
     if (copy_mm(clone_flags, task) != 0) {
-        ret = ERR_NO_MEM;
+        ret = -E_NOMEM;
         goto failed_and_clean_files;
     }
     copy_task(task, stack, _if);
@@ -192,15 +229,17 @@ int32_t do_fork(uint32_t clone_flags, uint32_t stack, InterruptFrame_t *_if) {
     bool flag;
     intr_save(flag);
     {
-        task->tid = getNewPid();
+        task->tid = get_new_tid();
         ret = task->tid;
-        listAdd(&TaskList.ptr, &(task->ptr));
-        TaskCount++;
+        add_task(task);
     }
     intr_restore(flag);
 
     sprintk("新进程%d建立\n", ret);
     wakeupTask(task);
+
+    // 子进程不会执行至此
+    ret = task->tid;// 向父进程返回新的子进程的 pid
 
 out:
     return ret;
@@ -217,7 +256,7 @@ extern PGD_t *KernelPGD;
 static int setup_pgdir(MemMap_t *mm) {
     PhyPageBlock_t *phypage;
     if ((phypage = allocPhyPages(1)) == NULL) {
-        return -ERR_NO_MEM;
+        return -E_NOMEM;
     }
     PGD_t *pgdir = page2kva(phypage);
     memcpy(pgdir, KernelPGD, PGSIZE);
@@ -315,32 +354,57 @@ int32_t copy_task(Task_t *task, uint32_t esp, InterruptFrame_t *_if) {
     task->_if = (InterruptFrame_t *)(task->kstack + KSTACKSIZE) - 1;
     *(task->_if) = *_if;
     task->_if->eax = 0; // 子进程的返回值
-    task->_if->esp = esp;
+    task->_if->user_esp = esp;
     SetBit(&(task->_if->eflags), 9); // 打开中断
     task->context.eip = forkret;
     task->context.esp = (uint32_t)task->_if;
 }
 // 进程终止处理，本函数不能返回
-void do_exit(int err_code) {
+int do_exit(int err_code) {
     if (CurrentTask == idle_task) {
         panic("Trying to exit idle!");
     }
-    // panic("process exit!!.");
-    if (CurrentTask->mm != NULL) { // 是用户进程
-        // TODO 用户态进程退出
+    MemMap_t *mm = CurrentTask->mm;
+    if (mm != NULL) {     // 是用户进程
+                          //  用户态进程退出
+        lcr3(kernel_cr3); // 1 切换到内核页表
+        if (mm_ref_dec(mm) ==
+            0) { // 2 mm_count-1=0 说明此 mm 没有被其他进程共享,可以被释放
+            exit_mmap(mm);
+            put_pgdir(mm);
+            mm_destroy(mm);
+        }
+        CurrentTask->mm = NULL; // 表示当前进程的内存已释放完毕
     }
     // put_files(CurrentTask);
     CurrentTask->state = TASK_ZOMBIE;
     CurrentTask->exit_code = err_code;
 
     bool flag;
-    Task_t *task;
+    Task_t *ptask;
     intr_save(flag);
     {
         // printk("Task %d:process exit!\n", CurrentTask->tid);
-        task = CurrentTask->parent;
-        if (task->wait_state == WT_CHILD) {
-            wakeupTask(task);
+        ptask = CurrentTask->parent;
+        if (ptask->wait_state == WT_CHILD) {
+            wakeupTask(ptask);
+        }
+
+        while (CurrentTask->cptr != NULL) {
+            ptask = CurrentTask->cptr;
+            CurrentTask->cptr = ptask->optr;
+
+            ptask->yptr = NULL;
+            if ((ptask->optr = init_task->cptr) != NULL) {
+                init_task->cptr->yptr = ptask;
+            }
+           ptask->parent = init_task;
+            init_task->cptr = ptask;
+            if (ptask->state == TASK_ZOMBIE) {
+                if (init_task->wait_state == WT_CHILD) {
+                    wakeupTask(init_task);
+                }
+            }
         }
     }
     intr_restore(flag);
@@ -350,14 +414,19 @@ void do_exit(int err_code) {
     schedule();
     panic("do_exit will not return!");
 }
+
 static int load_icode_read(int fd, void *buf, size_t len, int32_t offset) {
     int ret;
-    if((ret = sysfile_seek(fd,offset,LSEEK_SET))!=0){
+    if ((ret = sysfile_seek(fd, offset, LSEEK_SET)) != 0) {
         return ret;
     }
-    if((ret = sysfile_read(fd,buf,len))!=0){}
+    if ((ret = sysfile_read(fd, buf, len)) != len) {
+        return (ret < 0) ? ret : -1;
+    }
+    return 0;
 }
 static int load_icode(int fd, int argc, char **kargv) {
+    sprintk(" load icode:\n");
     if (CurrentTask->mm != NULL) {
         panic("load_icode: current->mm must be empty.\n");
     }
@@ -385,8 +454,7 @@ static int load_icode(int fd, int argc, char **kargv) {
     ELF_SectionHeader_t __ph, *ph = &__ph;
     uint32_t vm_flags, perm, phnum;
     for (phnum = 0; phnum < elf->e_phnum; phnum++) {
-        sprintk("正在加载第 %d 个 program, 共 %d 个.\n", phnum + 1,
-                elf->e_phnum);
+        sprintk("加载第 %d 个 program, 共 %d 个.\n", phnum + 1, elf->e_phnum);
         int32_t phoff = elf->e_phoff + sizeof(ELF_SectionHeader_t) * phnum;
         if ((ret = load_icode_read(fd, ph, sizeof(ELF_SectionHeader_t),
                                    phoff)) != 0) {
@@ -492,11 +560,11 @@ static int load_icode(int fd, int argc, char **kargv) {
     assert(pgdir_alloc_page(mm->pgdir, USTACK_TOP - 4 * PGSIZE, PTE_USER) !=
                NULL,
            "pgdir_alloc_page err!");
-    
+
     mm_ref_inc(mm);
     // 安装 mm
     CurrentTask->mm = mm;
-    CurrentTask->cr3 =  kva2pa(mm->pgdir);
+    CurrentTask->cr3 = kva2pa(mm->pgdir);
     lcr3(kva2pa(mm->pgdir));
 
     // 计算 argc, argv
@@ -521,13 +589,15 @@ static int load_icode(int fd, int argc, char **kargv) {
 
     InterruptFrame_t *tf = CurrentTask->_if;
     memset(tf, 0, sizeof(InterruptFrame_t));
-    tf->cs = USER_CS;                         // 用户代码段
+    tf->cs = USER_CS;                   // 用户代码段
     tf->ds = tf->es = tf->ss = USER_DS; // 用户数据段
-    tf->esp = stacktop;                       // 用户栈
-    tf->eip = elf->e_entry;                   // 此 elf 的入口
+    tf->user_esp = stacktop;            // 用户栈
+    sprintk("user stacktop:0x%08X\n", stacktop);
+    tf->eip = elf->e_entry; // 此 elf 的入口
+    sprintk("user entry:0x%08X\n", elf->e_entry);
     tf->eflags = FL_IF;
     ret = 0;
-    sprintk("load_icode end.\n");
+    sprintk("load_icode ok.\n");
 
 out:
     return ret;
@@ -543,13 +613,37 @@ bad_mm:
 // this function isn't very correct
 static void put_kargv(int argc, char **kargv) {
     while (argc > 0) {
-        // kfree(kargv[--argc]);
+        // BUG TODO in put_kargv
+        kfree(kargv[--argc], EXEC_MAX_ARG_LEN + 1);
     }
 }
 static int copy_kargv(MemMap_t *mm, int argc, char **kargv, const char **argv) {
+    int i, ret = -E_INVAL;
+    if (!checkUserMem(mm, (uint32_t)argv, sizeof(const char *) * argc, 0)) {
+        return ret;
+    }
+    for (i = 0; i < argc; i++) {
+        char *buffer;
+        if ((buffer = kmalloc(EXEC_MAX_ARG_LEN + 1)) == NULL) {
+            goto failed_nomem;
+        }
+        if (!copyLegalStr(mm, buffer, argv[i], EXEC_MAX_ARG_LEN + 1)) {
+            kfree(buffer, EXEC_MAX_ARG_LEN + 1);
+            goto failed_cleanup;
+        }
+        kargv[i] = buffer;
+    }
+    return 0;
+
+failed_nomem:
+    ret = -E_NOMEM;
+failed_cleanup:
+    put_kargv(i, kargv);
+    return ret;
 }
 
 int do_execve(const char *name, int argc, const char **argv) {
+    sprintk("execve start:\n");
     MemMap_t *mm = CurrentTask->mm;
     if (!(argc >= 1 && argc <= EXEC_MAX_ARG_NUM)) {
         return -E_INVAL;
@@ -561,7 +655,7 @@ int do_execve(const char *name, int argc, const char **argv) {
     const char *path;
 
     int ret = -E_INVAL;
-
+    sprintk("e1\n");
     lock_mm(mm);
     if (name == NULL) {
         strcpy(local_name, "null");
@@ -571,18 +665,21 @@ int do_execve(const char *name, int argc, const char **argv) {
             return ret;
         }
     }
+    sprintk("e2\n");
     if ((ret = copy_kargv(mm, argc, kargv, argv)) != 0) {
         unlock_mm(mm);
         return ret;
     }
+    sprintk("e3\n");
     path = argv[0];
     unlock_mm(mm);
     files_closeall(CurrentTask->files);
-
+    sprintk("e4\n");
     int fd;
     if ((ret = fd = sysfile_open(path, OPEN_READ)) < 0) {
         goto execve_exit;
     }
+    sprintk("e5\n");
     if (mm != NULL) {
         lcr3(kernel_cr3);
         if (mm_ref_dec(mm) == 0) {
@@ -593,16 +690,111 @@ int do_execve(const char *name, int argc, const char **argv) {
         CurrentTask->mm = NULL;
     }
     ret = -E_NOMEM;
+    sprintk("e6\n");
 
     if ((ret = load_icode(fd, argc, kargv)) != 0) {
         goto execve_exit;
     }
+    sprintk("e7\n");
     put_kargv(argc, kargv);
     setTaskName(CurrentTask, local_name);
-
+    sprintk("e8\n");
     return 0;
+
 execve_exit:
     put_kargv(argc, kargv);
     do_exit(ret);
     panic("already exit.");
+}
+int exec_user(const char *name, const char **argv) {
+    int argc = 0;
+    int ret;
+    while (argv[argc] != NULL) {
+        argc++;
+    }
+    asm volatile("int %1;"
+                 : "=a"(ret)
+                 : "i"(T_SYSCALL), "0"(SYS_exec), "d"(name), "c"(argc),
+                   "b"(argv)
+                 : "memory");
+    return ret;
+}
+#define __KERNEL_EXECVE(name, path, ...)                                       \
+    ({                                                                         \
+        const char *argv[] = {path, ##__VA_ARGS__, NULL};                      \
+        exec_user(name, argv);                                                 \
+    })
+
+#define KERNEL_EXECVE(x, ...) __KERNEL_EXECVE(x, x, ##__VA_ARGS__)
+
+void test_user() {
+    sprintk("\n-----------USER TEST------- -\n");
+    KERNEL_EXECVE("/fs0/user/user.out");
+    // sprintk("\n-----------USER TEST END------- -\n");
+}
+
+// 等待一个或多个子进程僵死并清理.
+//  一旦子进程变为PROC_ZOMBIE状态,此函数则清理子进程的资源.
+// 若 pid 为 0,则用户调用的是 wait()函数
+// 若 pid 不为 0 则用户调用的是 waitpid()函数
+//
+// 考虑因素: 如果子进程还有子进程,则需要睡眠等待.重新调度进程队列.
+//
+// 清理资源: 1 从内核的进程维护表中移除  2 释放栈空间 释放进程控制块空间
+int do_wait(int pid, int *code_store) {
+    MemMap_t *mm = CurrentTask->mm;
+    if (code_store != NULL) {
+        if (!checkUserMem(mm, (uint32_t)code_store, sizeof(int), 1)) {
+            return -E_INVAL;
+        }
+    }
+
+    Task_t *task;
+    bool intr_flag, haskid;
+repeat:
+    haskid = 0;     // 是否有子进程
+    if (pid != 0) { // 若调用的是 waitpid()
+        task = find_task(pid);
+        if (task != NULL &&
+            task->parent == CurrentTask) { // 若找到的进程是当前进程的子进程,
+            haskid = 1;
+            if (task->state == TASK_ZOMBIE) { // 必须是僵死状态才可回收
+                goto found;
+            }
+        }
+    } else { // 调用的是 wait(),则找到任意一个处于退出状态的子进程
+        task = CurrentTask->cptr;
+        for (; task != NULL; task = task->optr) {
+            haskid = 1;
+            if (task->state == TASK_ZOMBIE) {
+                goto found;
+            }
+        }
+    }
+    if (haskid) {
+        CurrentTask->state = TASK_SLEEPING;
+        CurrentTask->wait_state = WT_CHILD;
+        schedule();
+        if (CurrentTask->flags & PF_EXITING) {
+            do_exit(-E_KILLED);
+        }
+        goto repeat;
+    }
+    return -E_BAD_PROC;
+
+found:
+    if (task == idle_task || task == init_task) {
+        panic("Can not wait idleproc or initproc!\n");
+    }
+    if (code_store != NULL) {
+        *code_store = task->exit_code;
+    }
+    intr_save(intr_flag);
+    {
+        del_task(task);
+    }
+    intr_restore(intr_flag);
+    freeKstack(task);
+    kfree(task, sizeof(Task_t));
+    return 0;
 }

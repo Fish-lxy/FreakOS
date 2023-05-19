@@ -20,6 +20,8 @@ typedef          int   int32_t;
 
 typedef uint32_t size_t;
 
+
+
 //向下取整
 #define ROUNDDOWN(a, n) ({                                          \
             size_t __a = (size_t)(a);                               \
@@ -70,6 +72,10 @@ static inline void ClearBit(uint32_t *num, uint32_t pos){
 #define E_NOMEM 12
 #define E_KILLED 13
 #define E_INVAL_ELF 14
+#define E_NO_FREE_TASK 15
+#define E_BAD_PROC 16
 #define E_UNKNOWN 255
+
+
 
 #endif

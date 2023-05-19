@@ -51,15 +51,19 @@ int do_pgfault(MemMap_t *mm, InterruptFrame_t *_if, uint32_t cr2) {
     uint32_t addr = cr2;
     sprintk("\n---do_pgfault---\n");
     sprintk("page fault信息:\n");
-    sprintk("mm: 0x%08lx\n", mm);
-    sprintk("地址: 0x%08lx\n", addr);
-    sprintk("此异常错误码: 0x%08lx\n", error_code);
+    if (CurrentTask != NULL) {
+        sprintk("tid: %d\n", CurrentTask->tid);
+    }
+    sprintk("mm: 0x%08X\n", mm);
+    sprintk("读写地址: 0x%08X\n", addr);
+    sprintk("指令在:0x%08X\n", _if->eip);
+    sprintk("此异常错误码: 0x%08X\n", error_code);
 
     int ret = -E_INVAL;
     VirtMemArea_t *vma = find_vma(mm, addr);
     sprintk("find_vma : 0x%08X\n", vma);
     if (vma != NULL) {
-        sprintk("已通过find_vma获取此地址在 mm_struct 中对应的 vma.\n");
+        sprintk("已通过find_vma获取此地址在 MemMap_t 中对应的 vma.\n");
         sprintk("vma->start:0x%08X vma->end:0x%08X.\n", vma->vm_start,
                 vma->vm_end);
     }
@@ -135,6 +139,7 @@ int do_pgfault(MemMap_t *mm, InterruptFrame_t *_if, uint32_t cr2) {
             // existed), then should be here now. we can implement the delayed
             // memory space copy for fork child process
             // we didn't implement now, we will do it in future.
+
             panic("error write a non-writable pte");
             // page = pte2page(*ptep);
         } else {

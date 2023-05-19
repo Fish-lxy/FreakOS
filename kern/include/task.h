@@ -19,8 +19,7 @@
 
 #define MAX_TASKS 4096
 
-#define ERR_NO_FREE_TASK -1
-#define ERR_NO_MEM -2
+
 
 
 
@@ -31,6 +30,8 @@ typedef enum TaskState_e {
     TASK_ZOMBIE = 3
 } TaskState_e;
 // typedef enum task_state_t TaskState_e;
+
+#define PF_EXITING                  0x00000001
 
 // 等待状态(等待原因)
 #define WT_NOTWAIT 0                           // 未等待
@@ -67,6 +68,7 @@ typedef struct Task_t {
 
     uint32_t flags;
     Task_t *parent;
+    Task_t *cptr, *yptr, *optr;     // children, younger,older 进程
     MemMap_t *mm;
     Context_t context;
     InterruptFrame_t *_if;
@@ -100,6 +102,11 @@ extern uint32_t TaskCount;
 void initTask();
 int32_t createKernelThread(int (*func)(void*), void* arg, uint32_t clone_flags);
 
-void do_exit(int err_code);
+int32_t do_fork(uint32_t clone_flags, uint32_t stack, InterruptFrame_t *_if);
+int do_exit(int err_code);
 int do_execve(const char *name, int argc, const char **argv);
+int exec_user(const char *name, const char **argv);
+int do_wait(int pid, int *code_store);
+//
+void test_user();
 #endif

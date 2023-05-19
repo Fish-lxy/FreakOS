@@ -48,6 +48,7 @@ int sysfile_open(const char *__path, uint32_t open_flags) {
 }
 int sysfile_close(int fd) { return file_close(fd); }
 
+//返回值正值为读取的字节数
 int sysfile_read(int fd, void *base, size_t len) {
     // sprintk("sysfile_read:\n");
     MemMap_t *mm = CurrentTask->mm;
@@ -65,7 +66,7 @@ int sysfile_read(int fd, void *base, size_t len) {
 
     int ret = 0;
     size_t copied = 0, alen;
-    // 循环每次读取一个 buffer
+    // 循环每次读取一个 buffer 到内核空间
     while (len != 0) {
         if ((alen = IOBUF_SIZE) > len) {
             alen = len;
@@ -75,7 +76,7 @@ int sysfile_read(int fd, void *base, size_t len) {
         if (alen != 0) {
             lock_mm(mm);
             {
-                //  2. buffer 复制到--> user addr
+                //  2. 复制数据到用户空间
                 if (copyToUser(mm, base, buffer, alen)) {
                     base += alen, len -= alen, copied += alen;
                 } //TODO
@@ -145,6 +146,23 @@ out:
 
 int sysfile_seek(int fd, int32_t pos, int flag) {
     return file_seek(fd, pos, flag);
+}
+int sysfile_fstat(int fd, Stat_t *__stat){
+    MemMap_t *mm = CurrentTask->mm;
+    int ret;
+    Stat_t __local_stat, *stat = &__local_stat;
+    if ((ret = file_fstat(fd, stat)) != 0) {
+        return ret;
+    }
+
+    lock_mm(mm);
+    {
+        if (!copyToUser(mm, __stat, stat, sizeof(Stat_t))) {
+            ret = -E_INVAL;
+        }
+    }
+    unlock_mm(mm);
+    return ret;
 }
 
 int sysfile_fsync(int fd) { return file_fsync(fd); }

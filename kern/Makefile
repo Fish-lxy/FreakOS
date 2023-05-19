@@ -9,13 +9,13 @@ CC = gcc
 LD = ld
 ASM = nasm
 
-C_FLAGS = -c -O0 -std=gnu99 -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-pic -fno-stack-protector -I include
+C_FLAGS = -c -O0 -std=gnu99 -Wall -m32 -g -ggdb -gstabs+ -nostdinc -fno-pic -fno-stack-protector -I include
 LD_FLAGS = -T scripts/kernel.ld -m elf_i386 -nostdlib
 ASM_FLAGS = -f elf -g -F stabs
 
 VPATH = ./
 
-all: $(S_OBJECTS) $(C_OBJECTS) link update
+all: $(S_OBJECTS) $(C_OBJECTS) link
 
 .c.o:
 	@echo Complie $< ...
@@ -33,13 +33,6 @@ link:
 clean:
 	$(RM) $(S_OBJECTS) $(C_OBJECTS) kernel
 
-.PHONY:update
-update:
-	sudo losetup /dev/loop1 ../disk.img -o 1048576
-	sudo mount /dev/loop1 /mnt/kernel
-	sudo cp kernel /mnt/kernel/kernel
-	sync
-	sudo umount /mnt/kernel
-	sudo losetup -d /dev/loop1
+
 
 

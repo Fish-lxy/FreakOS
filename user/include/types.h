@@ -20,4 +20,10 @@ typedef int int32_t;
 
 typedef uint32_t size_t;
 
+typedef struct Stat_t {
+    uint32_t attr;
+    uint32_t size;
+
+} Stat_t;
+
 #endif

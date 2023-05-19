@@ -7,8 +7,10 @@
 
 struct INode_t;
 typedef struct INode_t INode_t;
+struct Stat_t;
+typedef struct Stat_t Stat_t;
 
-#define FS_MAX_FPATH_LEN    4095
+#define FS_MAX_FPATH_LEN 4095
 
 #define NO_FD 65536
 
@@ -72,6 +74,7 @@ int file_close(int fd);
 int file_read(int fd, void *buf, uint32_t blen, uint32_t *copied);
 int file_write(int fd, void *buf, uint32_t blen, uint32_t *copied);
 int file_seek(int fd, int32_t pos, uint32_t flag);
+int file_fstat(int fd, Stat_t *stat);
 int file_fsync(int fd);
 
 // files

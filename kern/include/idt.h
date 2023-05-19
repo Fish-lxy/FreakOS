@@ -67,7 +67,7 @@ typedef struct InterruptFrame_t {
     uint32_t user_esp;
     uint32_t ss;
     // 从这里开始 push
-} InterruptFrame_t;
+} __attribute__((packed)) InterruptFrame_t;
 
 // 定义中断处理函数指针
 typedef void (*InterruptHandler_t)(InterruptFrame_t *);

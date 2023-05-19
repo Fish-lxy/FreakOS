@@ -25,7 +25,7 @@ Semaphore_t sem;
 extern uint8_t idtflag(uint8_t istrap, uint8_t dpl);
 
 int i;
-void testA() {
+void user_task() {
     // printk("idtflag:%X\n",idtflag(FALSE, DPL_KERNEL));
 
     //  while (1) {
@@ -47,7 +47,8 @@ void testA() {
     // acquireSem(&sem);
     // printk("second\n");
 
-    test_putc_syscall('A');
+    //test_putc_syscall('A');
+    test_user();
 
     // printk("Physical Mem Test:\n");
     // char* i = kmalloc(8);
@@ -137,21 +138,23 @@ int init_task_func(void *arg) {
     sprintk("\n\nALL TEST:\n\n");
     printk("ALL TEST:\n");
 
-    test_vfs();
-    testFatInode();
+    //test_vfs();
+    //testFatInode();
 
-    test_vDev();
+    //test_vDev();
 
-    test_vfslookup();
-    test_vfs_file();
+    //test_vfslookup();
+    //test_vfs_file();
 
     //test_vma();
     //test_pgfault();
-     test_file();
+     //test_file();
 
     printk("\n");
-    createKernelThread(testA, NULL, 0);
-    createKernelThread(testB, NULL, 0);
+    createKernelThread(user_task, NULL, 0);
+    //createKernelThread(testB, NULL, 0);
+
+    
     //-----------------------------------------------------------------------
     while (1) {
         asm("hlt");

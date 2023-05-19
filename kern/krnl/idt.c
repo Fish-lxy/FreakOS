@@ -4,6 +4,7 @@
 #include "debug.h"
 #include "mm.h"
 #include "string.h"
+#include "task.h"
 #include "types.h"
 
 // 中断处理
@@ -122,7 +123,7 @@ void initIDT() {
     IDT_setGate(47, (uint32_t)irq15, 0x08, 0x8E);
 
     // 0xAA = 170 将来用于实现系统调用idtflag(TRUE, DPL_USER)
-    IDT_setGate(0xAA, (uint32_t)isr170, 0x08, 0x8E);
+    IDT_setGate(0xAA, (uint32_t)isr170, 0x08, idtflag(1,DPL_USER));
 
     // 更新设置中断描述符表
     flushIDT_s((uint32_t)&idt_ptr);
@@ -144,7 +145,8 @@ void IDT_setGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
 }
 
 // 调用 ISR 中断处理函数，由汇编调用
-// 根据 InterruptFrame_t 中的中断号，执行 interruptHandlers 函数数组中对应的中断处理函数
+// 根据 InterruptFrame_t 中的中断号，执行 interruptHandlers
+// 函数数组中对应的中断处理函数
 void ISR_handlerCall(InterruptFrame_t *pr) {
     // 由 InterruptFrame_t 中的中断号选择中断处理函数
     if (interruptHandlers[pr->int_no]) {
@@ -172,9 +174,53 @@ void IRQ_handlerCall(InterruptFrame_t *pr) {
     if (interruptHandlers[pr->int_no]) {
         interruptHandlers[pr->int_no](pr);
     } else {
-        //printkColor("\nInterrupt unhandled! intcode : %d\n", TC_black, TC_red,
-        //            pr->int_no);
-        //haltSys();
+        // printkColor("\nInterrupt unhandled! intcode : %d\n", TC_black,
+        // TC_red,
+        //             pr->int_no);
+        // haltSys();
+    }
+}
+//------------------------------------------------- 
+static bool isIntrInKernel(InterruptFrame_t *pr){
+    return (pr->cs == (uint16_t)KERNEL_CS);
+}
+static void dispatchIntr(InterruptFrame_t *pr){
+    if (interruptHandlers[pr->int_no]) {
+        interruptHandlers[pr->int_no](pr);
+    } 
+}
+void IntrHandlerCall(InterruptFrame_t *_if) {
+    if (_if->int_no >= 40) {
+        // 发送重设信号给从片
+        outb(0xA0, 0x20);
+    }
+    // 发送重设信号给主片
+    outb(0x20, 0x20);
+
+    
+    if(CurrentTask == NULL){
+        dispatchIntr(_if);
+    }else{
+        // 维护中断帧的链,用于嵌套中断
+        InterruptFrame_t *old_if = CurrentTask->_if;
+        CurrentTask->_if = _if;
+
+        bool in_kernel = isIntrInKernel(_if);
+
+        dispatchIntr(_if);
+        CurrentTask->_if = old_if;
+
+        // 只有用户态进程可以抢占.内核进程不可抢占
+        if (!in_kernel) {
+            // 检查进程标志,是否被标记为希望"被"退出
+            if (CurrentTask->flags & PF_EXITING) {
+                do_exit(-E_KILLED);
+            }
+            // 每次系统调用,当前进程都可能被标记为应被调度.此时进行调度
+            if (CurrentTask->need_resched) {
+                schedule();
+            }
+        }
     }
 }
 
@@ -194,7 +240,7 @@ void enableIRQ(uint8_t irq) { // irq为IRQ号，从0开始
 uint8_t idtflag(uint8_t istrap, uint8_t dpl) {
     IDT_Flag_t _flag;
     IDT_Flag_t *flag = &_flag;
-    _flag.gd_type = istrap ? 0xf : 0xE;
+    _flag.gd_type = istrap ? 0xF : 0xE;
     _flag.gd_s = 0;
     _flag.gd_dpl = dpl;
     _flag.gd_p = 1;
